@@ -1,0 +1,9 @@
+# Copy to .dev.vars for `npx wrangler pages dev`. Never commit .dev.vars.
+# In production these are set in Cloudflare Pages -> Settings -> Environment variables.
+SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+RESEND_API_KEY=
+EMAIL_FROM=Badr Grappling <noreply@badrgrappling.co.uk>
+CLUB_EMAIL=badrgrappling@outlook.com

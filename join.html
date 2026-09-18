@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Join the club — Badr Grappling</title>
+<meta name="description" content="Membership and day passes at Badr Grappling. Register to train with us.">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead"></div>
+
+<main id="main">
+  <section class="band band-tight">
+    <div class="wrap">
+      <p class="eyebrow">Join us</p>
+      <h1 class="h1">Step on the mat.</h1>
+      <p class="lede mt1">
+        Come on a day pass, train with us, and decide afterwards.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band-line">
+    <div class="wrap">
+      <h2 class="h2 mb2">Membership</h2>
+      <div class="grid g3">
+        <article class="panel">
+          <p class="meta">Standard</p>
+          <p class="stat-num mt1">£35<span class="small muted"> / month</span></p>
+          <p class="small mt1">Full access to every class at your branch.</p>
+        </article>
+        <article class="panel">
+          <p class="meta">Student</p>
+          <p class="stat-num mt1">£30<span class="small muted"> / month</span></p>
+          <p class="small mt1">Full access, for students.</p>
+        </article>
+        <article class="panel">
+          <p class="meta">Kids</p>
+          <p class="stat-num mt1">£25<span class="small muted"> / month</span></p>
+          <p class="small mt1">For the under-16s class. A parent or guardian registers.</p>
+        </article>
+      </div>
+
+      <div class="panel panel-bone mt3">
+        <h3 class="h3 mb1">Day passes</h3>
+        <p class="small">
+          £10 a session for adults, £7 a session for kids. Useful if you are visiting,
+          or not ready to commit to a month.
+        </p>
+      </div>
+
+      <div class="table-scroll mt3">
+        <table class="timetable">
+          <caption class="sr">Class times at the selected branch</caption>
+          <thead><tr><th scope="col">Class</th><th scope="col">Day</th><th scope="col">Time</th></tr></thead>
+          <tbody id="join-times"><tr><td colspan="3" class="load">Loading times…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band-bone band-line">
+    <div class="wrap" style="max-width:40rem">
+      <p class="eyebrow">Register</p>
+      <h2 class="h2 mb1">Create your account</h2>
+      <p class="small muted mb2">
+        Registering sets up your member account. A coach approves new members before
+        the portal opens up, usually once you have trained with us.
+      </p>
+
+      <div class="notice" id="join-msg" hidden></div>
+
+      <form method="post" id="join-form" novalidate>
+        <div class="field">
+          <label for="j-name">Full name</label>
+          <input id="j-name" name="name" type="text" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label for="j-email">Email</label>
+          <input id="j-email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="j-phone">Phone</label>
+          <input id="j-phone" name="phone" type="tel" autocomplete="tel">
+        </div>
+        <div class="field">
+          <label for="j-branch">Branch</label>
+          <select id="j-branch" name="branch"></select>
+        </div>
+        <div class="field">
+          <label for="j-pass">Choose a password</label>
+          <input id="j-pass" name="password" type="password" autocomplete="new-password" minlength="8" required>
+          <p class="hint">At least 8 characters.</p>
+        </div>
+
+        <div class="check">
+          <input id="j-terms" type="checkbox" required>
+          <label for="j-terms">
+            I have read and agree to the
+            <a class="link" href="terms.html">participation terms, waiver and consent</a>.
+            If the participant is under 18, I confirm I am their parent or legal guardian.
+          </label>
+        </div>
+
+        <button class="btn mt1" type="submit" id="j-submit">Create account</button>
+        <p class="hint mt1">Already registered? <a class="link" href="login.html">Sign in</a>.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/join.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Badr Grappling</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead" class="no-print"></div>
+
+<main id="main" hidden>
+  <section class="band-tight no-print">
+    <div class="wrap">
+      <div class="between">
+        <div>
+          <p class="eyebrow" id="ad-role">Admin</p>
+          <h1 class="h1">Club admin</h1>
+        </div>
+        <div class="field mb0" id="scope-wrap">
+          <label for="scope">Managing</label>
+          <select id="scope"></select>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band-tight band-line">
+    <div class="wrap">
+      <div class="admin-tabs no-print" role="tablist" aria-label="Admin sections">
+        <button role="tab" id="tab-register" aria-controls="panel-register">Register</button>
+        <button role="tab" id="tab-qr"       aria-controls="panel-qr">QR code</button>
+        <button role="tab" id="tab-wins"     aria-controls="panel-wins">Training wins</button>
+        <button role="tab" id="tab-points"   aria-controls="panel-points">Points</button>
+        <button role="tab" id="tab-approvals" aria-controls="panel-approvals">Approvals <span class="count" id="n-approvals" hidden></span></button>
+        <button role="tab" id="tab-members"  aria-controls="panel-members">Members <span class="count" id="n-members" hidden></span></button>
+        <button role="tab" id="tab-videos"   aria-controls="panel-videos">Videos</button>
+        <button role="tab" id="tab-appeals"  aria-controls="panel-appeals">Appeals</button>
+        <button role="tab" id="tab-updates"  aria-controls="panel-updates">Updates</button>
+        <button role="tab" id="tab-enquiries" aria-controls="panel-enquiries" data-super hidden>Enquiries <span class="count" id="n-enquiries" hidden></span></button>
+        <button role="tab" id="tab-settings" aria-controls="panel-settings">Settings</button>
+      </div>
+
+      <div class="notice" id="ad-msg" hidden></div>
+
+      <div class="tabpanel" role="tabpanel" id="panel-register"  aria-labelledby="tab-register"  hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-qr"        aria-labelledby="tab-qr"        hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-wins"      aria-labelledby="tab-wins"      hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-points"    aria-labelledby="tab-points"    hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-approvals" aria-labelledby="tab-approvals" hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-members"   aria-labelledby="tab-members"   hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-videos"    aria-labelledby="tab-videos"    hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-appeals"   aria-labelledby="tab-appeals"   hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-updates"   aria-labelledby="tab-updates"   hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-enquiries" aria-labelledby="tab-enquiries" hidden></div>
+      <div class="tabpanel" role="tabpanel" id="panel-settings"  aria-labelledby="tab-settings"  hidden></div>
+    </div>
+  </section>
+</main>
+
+<footer id="foot" class="no-print"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/admin/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Badr Grappling</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead"></div>
+
+<main id="main">
+  <section class="band">
+    <div class="wrap" style="max-width:30rem">
+      <p class="eyebrow">Members</p>
+      <h1 class="h1 mb2" id="login-title">Sign in</h1>
+
+      <div class="notice" id="login-msg" hidden></div>
+
+      <!-- Sign in -->
+      <form method="post" id="login-form" novalidate>
+        <div class="field">
+          <label for="l-email">Email</label>
+          <input id="l-email" type="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="l-pass">Password</label>
+          <input id="l-pass" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn" type="submit" id="l-submit">Sign in</button>
+        <p class="hint mt2">
+          <button type="button" class="link" id="l-forgot" style="background:none;border:0;border-bottom:1px solid var(--brass-mid);padding:0 0 1px;cursor:pointer">Forgotten your password?</button>
+        </p>
+        <p class="hint">Not a member yet? <a class="link" href="join.html">Register here</a>.</p>
+      </form>
+
+      <!-- Set a new password (after following a reset link) -->
+      <form method="post" id="reset-form" novalidate hidden>
+        <div class="field">
+          <label for="r-pass">New password</label>
+          <input id="r-pass" type="password" autocomplete="new-password" minlength="8" required>
+          <p class="hint">At least 8 characters.</p>
+        </div>
+        <button class="btn" type="submit" id="r-submit">Save password</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/login.js"></script>
+</body>
+</html>

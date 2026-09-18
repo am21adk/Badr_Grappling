@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open a branch — Badr Grappling</title>
+<meta name="description" content="Want to start a Badr Grappling in your city? Tell us about yourself.">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead"></div>
+
+<main id="main">
+  <section class="band band-tight">
+    <div class="wrap">
+      <p class="eyebrow">Open a branch</p>
+      <h1 class="h1">Start a Badr Grappling in your city.</h1>
+      <p class="lede mt1">
+        Every branch runs the same way: good coaching, a safe room, and the same
+        values we train by in London. If you think you could build that where you
+        live, we want to hear from you.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band-line">
+    <div class="wrap">
+      <div class="grid g2" style="align-items:start">
+        <div>
+          <h2 class="h3 mb1">What we look for</h2>
+          <ul class="small">
+            <li>Real time on the mat — wrestling, judo, BJJ, sambo or similar.</li>
+            <li>Some coaching, or a clear plan for who will coach.</li>
+            <li>A space you can use regularly, with room for mats.</li>
+            <li>People around you who would turn up.</li>
+          </ul>
+          <p class="small muted mt2">
+            Nothing here is a hard requirement. Tell us where you are honestly and we
+            will talk it through with you.
+          </p>
+        </div>
+
+        <div>
+          <div class="notice" id="e-msg" hidden></div>
+          <form method="post" id="enquiry-form" novalidate>
+            <div class="trap" aria-hidden="true">
+              <label for="e-website">Leave this empty</label>
+              <input id="e-website" name="website" type="text" tabindex="-1" autocomplete="off">
+            </div>
+
+            <fieldset>
+              <legend>About you</legend>
+              <div class="field">
+                <label for="e-name">Name</label>
+                <input id="e-name" name="name" type="text" autocomplete="name" required>
+              </div>
+              <div class="field">
+                <label for="e-email">Email</label>
+                <input id="e-email" name="email" type="email" autocomplete="email" required>
+              </div>
+              <div class="field">
+                <label for="e-phone">Phone</label>
+                <input id="e-phone" name="phone" type="tel" autocomplete="tel">
+              </div>
+              <div class="field">
+                <label for="e-city">City</label>
+                <input id="e-city" name="city" type="text" autocomplete="address-level2" required>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Your experience</legend>
+              <div class="field">
+                <label for="e-bg">Grappling background</label>
+                <textarea id="e-bg" name="grappling_background" maxlength="3000"
+                          aria-describedby="e-bg-hint"></textarea>
+                <p class="hint" id="e-bg-hint">Styles, how long, any competition.</p>
+              </div>
+              <div class="field">
+                <label for="e-coach">Coaching experience</label>
+                <textarea id="e-coach" name="coaching_experience" maxlength="3000"></textarea>
+              </div>
+              <div class="field">
+                <label for="e-facility">Facility access</label>
+                <textarea id="e-facility" name="facility_access" maxlength="3000"
+                          aria-describedby="e-facility-hint"></textarea>
+                <p class="hint" id="e-facility-hint">Where you would train, whether it has mats, and how often you could use it.</p>
+              </div>
+              <div class="field">
+                <label for="e-why">Why do you want to open one?</label>
+                <textarea id="e-why" name="why" maxlength="3000"></textarea>
+              </div>
+            </fieldset>
+
+            <button class="btn" type="submit" id="e-submit">Send enquiry</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/enquiry.js"></script>
+</body>
+</html>

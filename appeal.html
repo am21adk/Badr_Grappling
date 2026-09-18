@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appeal — Badr Grappling</title>
+<meta name="description" content="Contribute to a Badr Grappling appeal.">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .appeal-hero { aspect-ratio: 16 / 9; background: var(--bone-deep); overflow: hidden; }
+  .appeal-hero img { width: 100%; height: 100%; object-fit: cover; }
+  .amounts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+  .amounts .chip { min-height: var(--tap); font-size: 1rem; font-weight: 600; }
+  .freq { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: 1.25rem; }
+  .freq .chip { min-height: var(--tap); }
+  .money-in { position: relative; }
+  .money-in span { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: var(--ink-mute); }
+  .money-in input { padding-left: 1.7rem; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead"></div>
+
+<main id="main">
+  <section class="band band-tight">
+    <div class="wrap">
+      <p class="eyebrow"><a class="link" href="donate.html" style="border:0">Support us</a></p>
+      <h1 class="h1" id="a-title">Appeal</h1>
+    </div>
+  </section>
+
+  <section class="band-tight band-line">
+    <div class="wrap">
+      <div class="notice" id="a-msg" hidden></div>
+      <div class="grid g2" style="align-items:start" id="a-body">
+        <p class="load">Loading appeal…</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/donate.js"></script>
+</body>
+</html>

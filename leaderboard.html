@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaderboard — Badr Grappling</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .lb-name { display: flex; align-items: center; gap: .7rem; min-width: 11rem; }
+  .lb-you { font-size: .6875rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--brass-ink); }
+  @media (max-width: 560px) {
+    .table th.hide-sm, .table td.hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead"></div>
+
+<main id="main" hidden>
+  <section class="band band-tight">
+    <div class="wrap">
+      <p class="eyebrow">Members</p>
+      <h1 class="h1">Leaderboard</h1>
+      <p class="lede mt1">
+        Points come from turning up and from what coaches award and approve.
+        Nobody enters their own.
+      </p>
+    </div>
+  </section>
+
+  <section class="band-tight band-line">
+    <div class="wrap">
+      <div class="filters">
+        <div class="field">
+          <label for="lb-branch">Branch</label>
+          <select id="lb-branch"></select>
+        </div>
+        <div class="field">
+          <span class="lbl" id="lb-period-label">Period</span>
+          <div class="chips" role="group" aria-labelledby="lb-period-label">
+            <button class="chip" type="button" data-period="all" aria-pressed="true">All time</button>
+            <button class="chip" type="button" data-period="month" aria-pressed="false">This month</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="table">
+          <caption class="sr" id="lb-caption">Leaderboard</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="pos">#</th>
+              <th scope="col">Member</th>
+              <th scope="col">Rank</th>
+              <th scope="col" class="num">Points</th>
+              <th scope="col" class="num">Sessions</th>
+              <th scope="col" class="num hide-sm">Training wins</th>
+            </tr>
+          </thead>
+          <tbody id="lb-body"><tr><td colspan="6" class="load">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="hint mt1" id="lb-foot"></p>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/leaderboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Member portal — Badr Grappling</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .standing { display: grid; gap: 2rem; grid-template-columns: minmax(0, 1fr); align-items: end; }
+  @media (min-width: 860px) { .standing { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } }
+  .standing-rank { display: flex; gap: 1.25rem; align-items: center; }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line-dark); border: 1px solid var(--line-dark); }
+  @media (min-width: 640px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .stats > div { background: var(--ink); padding: 1.1rem 1rem; }
+  .stats .stat-num { font-size: clamp(1.6rem, 4vw, 2.2rem); color: var(--bone); }
+  .stats .meta { color: rgba(242,237,227,.62); }
+
+  .vid-card { background: var(--white); border: 1px solid var(--line); }
+  .vid-body { padding: 1rem 1.1rem 1.25rem; }
+  .vid-facade {
+    position: relative; display: block; width: 100%; aspect-ratio: 16 / 9;
+    padding: 0; border: 0; background: var(--ink); cursor: pointer; overflow: hidden;
+  }
+  .vid-facade img { width: 100%; height: 100%; object-fit: cover; opacity: .82; }
+  .vid-facade:hover img { opacity: 1; }
+  .vid-facade .play {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+    background: var(--ink); border: 1px solid var(--brass-mid); color: var(--bone);
+  }
+  .vid-facade:hover .play { background: var(--brass); border-color: var(--brass); }
+  .ledger-pts { font-family: var(--serif); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ledger-pts.neg { color: var(--flag); }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead"></div>
+
+<main id="main" hidden>
+
+  <!-- Standing -->
+  <section class="band band-ink">
+    <div class="wrap">
+      <div class="notice" id="p-flash" hidden style="color:var(--ink)"></div>
+      <div class="standing">
+        <div>
+          <p class="eyebrow" id="p-branch">Member</p>
+          <h1 class="h1" id="p-hello">Welcome back</h1>
+          <div class="standing-rank mt2">
+            <span id="p-rank-plate"></span>
+            <div style="flex:1;min-width:0">
+              <p class="meta" style="color:rgba(242,237,227,.62)" id="p-rank-label">Rank</p>
+              <p class="stat-num" style="color:var(--bone)"><span id="p-points">0</span> <span class="small" style="color:rgba(242,237,227,.62)">points</span></p>
+            </div>
+          </div>
+          <div class="mt2" style="max-width:34rem">
+            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                 id="p-progress" aria-label="Progress to next rank"><i style="width:0%"></i></div>
+            <p class="small mt1" style="color:rgba(242,237,227,.72)" id="p-next">&nbsp;</p>
+          </div>
+        </div>
+        <div class="stats" aria-label="Your numbers">
+          <div><p class="meta">Sessions</p><p class="stat-num" id="s-sessions">0</p></div>
+          <div><p class="meta">Training record</p><p class="stat-num" id="s-record">0–0</p></div>
+          <div><p class="meta">This month</p><p class="stat-num" id="s-month">0</p></div>
+          <div><p class="meta">Week streak</p><p class="stat-num" id="s-streak">0</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sections -->
+  <section class="band-tight">
+    <div class="wrap">
+      <div class="admin-tabs" role="tablist" aria-label="Portal sections">
+        <button role="tab" id="tab-library" aria-controls="panel-library" aria-selected="true">Sessions &amp; tutorials</button>
+        <button role="tab" id="tab-record"  aria-controls="panel-record"  aria-selected="false" tabindex="-1">My record</button>
+        <button role="tab" id="tab-points"  aria-controls="panel-points"  aria-selected="false" tabindex="-1">Points history</button>
+        <button role="tab" id="tab-claim"   aria-controls="panel-claim"   aria-selected="false" tabindex="-1">Claim points</button>
+      </div>
+
+      <!-- Library -->
+      <div class="tabpanel" role="tabpanel" id="panel-library" aria-labelledby="tab-library">
+        <div class="filters">
+          <div class="field">
+            <label for="v-branch">Branch</label>
+            <select id="v-branch"></select>
+          </div>
+          <div class="field">
+            <label for="v-cat">Category</label>
+            <select id="v-cat"><option value="">All categories</option></select>
+          </div>
+          <div class="field" style="flex:1;min-width:12rem">
+            <label for="v-q">Search</label>
+            <input id="v-q" type="search" placeholder="Title or description">
+          </div>
+        </div>
+        <div class="grid g3" id="v-grid"><p class="load">Loading the library…</p></div>
+      </div>
+
+      <!-- Record -->
+      <div class="tabpanel" role="tabpanel" id="panel-record" aria-labelledby="tab-record" hidden>
+        <div class="grid g2" style="align-items:start">
+          <div>
+            <h2 class="h3 mb1">Attendance</h2>
+            <div class="table-scroll">
+              <table class="table">
+                <thead><tr><th scope="col">Date</th><th scope="col">Session</th><th scope="col">Logged by</th></tr></thead>
+                <tbody id="r-attend"><tr><td colspan="3" class="load">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h2 class="h3 mb1">Training rounds</h2>
+            <div class="table-scroll">
+              <table class="table">
+                <thead><tr><th scope="col">Date</th><th scope="col">Result</th><th scope="col">Against</th></tr></thead>
+                <tbody id="r-matches"><tr><td colspan="3" class="load">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Points -->
+      <div class="tabpanel" role="tabpanel" id="panel-points" aria-labelledby="tab-points" hidden>
+        <p class="small muted mb2">Every point you have been given, when, and who gave it.
+          Points are awarded by coaches or automatically when your attendance is recorded.</p>
+        <div class="table-scroll">
+          <table class="table">
+            <thead><tr><th scope="col">Date</th><th scope="col">For</th><th scope="col">Awarded by</th><th scope="col" class="num">Points</th></tr></thead>
+            <tbody id="pts-body"><tr><td colspan="4" class="load">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <h2 class="h3 mt3 mb1">How points work</h2>
+        <div class="table-scroll">
+          <table class="table" style="max-width:36rem">
+            <tbody id="rules-body"></tbody>
+          </table>
+        </div>
+        <p class="hint">The full-week bonus is added the Monday after, once the week is over.</p>
+        <h2 class="h3 mt3 mb1">The ladder</h2>
+        <div class="flex" id="ladder"></div>
+      </div>
+
+      <!-- Claim -->
+      <div class="tabpanel" role="tabpanel" id="panel-claim" aria-labelledby="tab-claim" hidden>
+        <div class="grid g2" style="align-items:start">
+          <div>
+            <p class="small muted mb2">
+              Brought a friend? Tagged the club? Did your home workout? Log it here.
+              A coach checks each one — points land when they approve it, not before.
+            </p>
+            <div class="notice" id="c-msg" hidden></div>
+            <form method="post" id="claim-form" novalidate>
+              <div class="field">
+                <label for="c-kind">What are you claiming?</label>
+                <select id="c-kind" required>
+                  <option value="referral">A friend I referred signed up and trained</option>
+                  <option value="social_tag">I tagged the club in a social post</option>
+                  <option value="home_workout">I completed a logged home workout</option>
+                </select>
+              </div>
+              <div class="field" id="c-ref-wrap">
+                <label for="c-ref">Friend&rsquo;s name</label>
+                <input id="c-ref" type="text" autocomplete="off">
+              </div>
+              <div class="field" id="c-url-wrap" hidden>
+                <label for="c-url">Link to the post</label>
+                <input id="c-url" type="url" inputmode="url" placeholder="https://www.instagram.com/p/…">
+              </div>
+              <div class="field">
+                <label for="c-detail">Details</label>
+                <textarea id="c-detail" maxlength="1000" style="min-height:5rem"
+                          placeholder="Anything the coach needs to check it"></textarea>
+              </div>
+              <button class="btn" type="submit" id="c-submit">Send for approval</button>
+            </form>
+          </div>
+          <div>
+            <h2 class="h3 mb1">Your claims</h2>
+            <div class="table-scroll">
+              <table class="table">
+                <thead><tr><th scope="col">Sent</th><th scope="col">Claim</th><th scope="col">Status</th></tr></thead>
+                <tbody id="c-list"><tr><td colspan="3" class="load">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/portal.js"></script>
+</body>
+</html>

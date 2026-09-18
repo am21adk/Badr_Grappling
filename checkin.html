@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check in — Badr Grappling</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .ci { min-height: 70vh; display: flex; align-items: center; }
+  .ci-mark { width: 3.5rem; height: 3.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
+  .ci-mark.ok   { background: var(--good); color: var(--white); }
+  .ci-mark.same { background: var(--ink);  color: var(--bone); }
+  .ci-mark.bad  { background: var(--flag); color: var(--white); }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead"></div>
+
+<main id="main">
+  <section class="band ci">
+    <div class="wrap" style="max-width:34rem">
+      <div id="ci-out" role="status" aria-live="polite">
+        <p class="eyebrow">Check in</p>
+        <h1 class="h1">Checking you in…</h1>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/checkin.js"></script>
+</body>
+</html>

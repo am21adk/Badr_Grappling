@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Updates — Badr Grappling</title>
+<meta name="description" content="News and announcements from Badr Grappling.">
+<link rel="icon" href="assets/brand/badr-mark.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .post-list { display: grid; gap: 0; }
+  .post-row {
+    display: grid; gap: 1.25rem 2rem;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 2rem 0; border-top: 1px solid var(--line);
+    text-decoration: none; color: inherit;
+  }
+  @media (min-width: 760px) {
+    .post-row.has-img { grid-template-columns: 18rem minmax(0, 1fr); }
+  }
+  .post-row:hover .tile-title { color: var(--brass-ink); }
+  .post-body { max-width: 42rem; }
+  .post-body p { margin-bottom: 1.2em; }
+  .post-hero { aspect-ratio: 16 / 9; background: var(--bone-deep); overflow: hidden; margin-bottom: 2rem; }
+  .post-hero img { width: 100%; height: 100%; object-fit: cover; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="masthead"></div>
+
+<main id="main">
+  <section class="band band-tight">
+    <div class="wrap">
+      <p class="eyebrow">Updates</p>
+      <h1 class="h1" id="u-title">From the club</h1>
+    </div>
+  </section>
+
+  <section class="band-tight band-line">
+    <div class="wrap">
+      <div id="u-list-view">
+        <div class="chips mb2" role="group" aria-label="Filter updates">
+          <button class="chip" type="button" data-scope="all" aria-pressed="true">All branches</button>
+          <button class="chip" type="button" data-scope="branch" aria-pressed="false" id="u-branch-chip">This branch</button>
+        </div>
+        <div class="post-list" id="u-list"><p class="load">Loading updates…</p></div>
+      </div>
+
+      <article id="u-post-view" hidden></article>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<script type="module" src="js/chrome.js"></script>
+<script type="module" src="js/updates.js"></script>
+</body>
+</html>
