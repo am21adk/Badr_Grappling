@@ -6,8 +6,8 @@
    the ink/bone of the stamp logo, the warm plaster of the
    mosque hall in the photography, the brass of their
    printed graphics. Square corners, hairline rules,
-   no shadows, no decorative gradients (one dark scrim keeps
-   carousel captions legible over photos), no motion.
+   no shadows, no gradients, and no motion beyond the home carousel,
+   which moves on by itself but holds still for anyone using it.
    ===================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Zilla+Slab:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
@@ -313,64 +313,97 @@ a, button, input, select, textarea, summary {
   transform: rotate(45deg); pointer-events: none;
 }
 
-/* ===== Carousel ===== */
-.carousel { position: relative; background: var(--ink); }
+/* ===== Carousel =====
+   Photos are cropped from the top first, down to just above the faces
+   (js/home.js works that out from each photo's data-faces); --focus is the
+   fallback without JavaScript. The arrows sit on the sides of the photo,
+   30% see-through; the caption sits in a slim bar underneath, with a pause
+   button for the autoplay. It loops. */
+.carousel { background: var(--ink); color: var(--bone); }
+.carousel-stage { position: relative; }
 .carousel-track {
   display: flex;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 .carousel-track::-webkit-scrollbar { display: none; }
-.carousel-slide {
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-  position: relative;
-  aspect-ratio: 16 / 9;
-  max-height: 78vh;
+/* position: relative keeps each hidden caption inside its own slide. Without
+   it, the captions of off-screen slides anchor to the page, escape the
+   track's clipping and make the whole page wider than the phone. */
+.carousel-slide { position: relative; flex: 0 0 100%; margin: 0; scroll-snap-align: start; }
+.carousel-slide img {
+  width: 100%;
+  /* About half the screen, so the headline shows below it. Never thinner
+     than 3:1 — the widest crop that still fits both rows of faces in the
+     team photos — and never deeper than 16:9. */
+  height: clamp(calc(100vw / 3), 50vh, calc(100vw * 9 / 16));
+  object-fit: cover;
+  object-position: 50% var(--focus, 50%);
 }
 @media (max-width: 720px) {
-  .carousel-slide { aspect-ratio: 4 / 5; max-height: none; }
+  /* Phones show the whole photo: in a group shot, a portrait crop would
+     cut off everyone standing at the sides. */
+  .carousel-slide img { height: auto; aspect-ratio: 3 / 2; }
 }
-.carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
-.carousel-cap {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  padding: 3.5rem var(--gut) 1.5rem;
-  background: linear-gradient(to top, rgba(27,26,23,.82), rgba(27,26,23,0));
-  color: var(--bone);
-  font-size: .8125rem; letter-spacing: .08em; text-transform: uppercase;
+/* The caption is read out with its photo, and shown in the bar below. */
+.carousel-slide figcaption {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
 }
+
 .carousel-btn {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: var(--tap); height: var(--tap);
   display: flex; align-items: center; justify-content: center;
-  background: rgba(27,26,23,.62);
-  border: 1px solid rgba(242,237,227,.34);
+  /* 30% see-through, so the photo shows behind them. */
+  background: rgba(27, 26, 23, .7);
+  border: 1px solid rgba(242, 237, 227, .45);
   color: var(--bone);
   border-radius: 1px; cursor: pointer;
   z-index: 2;
 }
-.carousel-btn:hover { background: var(--ink); border-color: var(--brass-mid); }
+.carousel-btn:hover, .carousel-btn:focus-visible { background: var(--ink); border-color: var(--brass-mid); }
 .carousel-btn[data-dir="prev"] { left: clamp(.5rem, 2vw, 1.25rem); }
 .carousel-btn[data-dir="next"] { right: clamp(.5rem, 2vw, 1.25rem); }
 .carousel-btn svg { width: 16px; height: 16px; }
-.carousel-dots {
-  position: absolute; left: 0; right: 0; bottom: .75rem;
-  display: flex; justify-content: center; gap: .4rem; z-index: 2;
+@media (max-width: 720px) {
+  /* On a phone the whole photo shows, and the people at the edges have
+     their faces around the middle of it. The arrows drop to the bottom
+     corners, over legs and mat rather than faces. */
+  .carousel-btn { top: auto; bottom: .5rem; transform: none; }
 }
-.carousel-dots button {
-  width: 28px; height: 3px; padding: 0;
-  background: rgba(242,237,227,.34);
-  border: 0; cursor: pointer;
+
+.carousel-bar {
+  display: flex; align-items: center; gap: 1rem;
+  min-height: 44px;
+  padding-block: .55rem;
+  padding-inline: var(--gut);
+  border-top: 1px solid rgba(242,237,227,.12);
 }
-.carousel-dots button[aria-current="true"] { background: var(--brass-lite); }
-.carousel-dots button::after {
-  content: ""; position: absolute; inset: -12px 0;
+.carousel-caption {
+  flex: 1; min-width: 0; margin: 0;
+  font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase;
+  color: rgba(242,237,227,.82);
 }
-.carousel-dots li { position: relative; list-style: none; }
-.carousel-dots ol { display: contents; }
+.carousel-count {
+  margin: 0;
+  font-size: .8125rem; font-variant-numeric: tabular-nums;
+  color: rgba(242,237,227,.62);
+}
+.carousel-play {
+  flex: none;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--bone);
+  border: 1px solid rgba(242,237,227,.34);
+  border-radius: 1px; cursor: pointer;
+}
+.carousel-play:hover { background: rgba(242,237,227,.08); border-color: var(--brass-mid); }
+.carousel-play svg { width: 13px; height: 13px; }
 
 /* ===== Cards & panels ===== */
 .panel {

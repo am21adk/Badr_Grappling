@@ -58,7 +58,12 @@ form.addEventListener('submit', async (e) => {
   });
   busy(btn, false);
 
-  if (error) return fail(error.message);
+  if (error) {
+    const exists = error.code === 'user_already_exists' || /already registered/i.test(error.message);
+    return fail(exists
+      ? 'There is already an account with that email. Sign in instead, or use "Forgotten your password?" on the sign-in page.'
+      : error.message);
+  }
 
   form.reset();
   form.hidden = true;

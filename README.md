@@ -93,6 +93,24 @@ README and the build script are never served.
 
 ## Running it locally
 
+**With sample data, no accounts needed:**
+
+```bash
+node preview/server.mjs
+```
+
+Then open http://localhost:8788. Sign in as `member@badr.test` or
+`admin@badr.test` with any password, or sign up; new accounts wait for approval
+like the real site. The members, updates and contributions are made up, and
+everything resets when the server stops. `preview/` is never deployed.
+
+**Showing someone else.** Forward port 8788 and send them the address. In VS
+Code: open the Ports panel, choose *Forward a Port*, enter `8788`, then
+right-click it and set *Port Visibility* to *Public*. It works while your
+computer and the preview are running.
+
+**Against a real Supabase project:**
+
 ```bash
 npx wrangler pages dev . --compatibility-date=2026-09-01
 ```
@@ -107,6 +125,25 @@ public site*. The header switcher, timetable, leaderboard and portal all pick it
 up from the database. No code changes are needed. To show its photos in the
 gallery, add them to `assets/gallery/` and list them under its slug in
 `js/gallery-data.js`.
+
+**Add a photo to the home carousel.** Use real photos, not stills from
+Instagram reels, which look like paused video. Add a `<figure>` slide to
+`index.html` like the others, and give the image a `data-faces` attribute:
+where the faces start and end, measured down the photo as fractions of its
+height. The carousel then crops from the top of the photo, down to just above
+the faces, and only crops the bottom when the frame is too short for that.
+
+| Photo | `data-faces` | `--focus` (fallback without JavaScript) |
+|---|---|---|
+| `team-line-up.jpg` | `0.40 0.79` | 69% |
+| `team-mats.jpg` | `0.28 0.55` | 34% |
+| `talk-before-training.jpg` | `0.35 0.70` | 55% |
+
+`--focus` is only used if JavaScript fails: `2 × (middle of the faces) − 50%`.
+The carousel never gets thinner than 3:1, so every face fits as long as the
+faces take up less than about 45% of the photo's height. Phones show the
+whole photo, with the arrows in its bottom corners. The caption sits in a bar
+under the photo, so no text covers a face.
 
 **Put Manchester live.** It is already a row, hidden. Do the same as above, or:
 `update branches set is_active = true where slug = 'manchester';`
@@ -138,8 +175,13 @@ of that file list the three steps. No page or table outside it needs to change.
 - **Videos load when tapped.** The library shows thumbnails, and the YouTube
   player (from `youtube-nocookie.com`) loads when a member presses play. Thirty
   embedded players on one page is too much for a phone on mobile data.
-- **The carousel never moves on its own.** The brief allowed autoplay. It's left
-  out so nothing can fight a reader's swipe, and so the page has no motion.
+- **The carousel moves on by itself every 6 seconds, and loops.** It never
+  overrides someone's own scroll. It holds still while a mouse is over it,
+  while keyboard focus is in it, while a finger is on it, while a swipe is
+  settling, and while it's off-screen or the tab is hidden. The pause button
+  in its caption bar stops it altogether, which WCAG 2.2.2 requires for
+  anything that moves by itself. It starts paused for anyone whose device is
+  set to reduce motion. The delay is `AUTOPLAY_MS` in `js/home.js`.
 - **Contribution copy says "support" and "contribute".** The appeal editor
   refuses titles or descriptions that mention charity, charitable giving, Gift
   Aid or tax relief.
@@ -153,8 +195,11 @@ of that file list the three steps. No page or table outside it needs to change.
   membership. The seed labels the classes "Under 16" and "16+".
 - **Photo credit.** The main team photo is credited to Alex Benyon in its file
   data. Ask whether they want a credit on the site.
-- **Excluded image.** The Khabib quote graphic from their Instagram is left out
-  of the gallery. It uses a real person's likeness.
+- **Excluded images.** The Khabib quote graphic from their Instagram is left
+  out, because it uses a real person's likeness. The three stills from their
+  Instagram reels are left out too, because they look like paused video. If
+  the club has more real photos, the carousel and gallery would benefit from a
+  few more.
 - **Copy.** Home and join page copy is new, written in their voice. "Beginners
   are welcome" is inferred from their posts, not stated anywhere. The
   participation terms are theirs, word for word.

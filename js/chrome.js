@@ -34,12 +34,14 @@ async function mountHeader(host) {
   const user = await currentUser();
   const profile = user ? await currentProfile() : null;
 
-  const links = [...PUBLIC_NAV, ...(profile ? MEMBER_NAV : [])]
+  // The portal and leaderboard open up once a coach has approved the member.
+  const approved = profile?.status === 'active';
+  const links = [...PUBLIC_NAV, ...(approved ? MEMBER_NAV : [])]
     .map(([href, label]) =>
       `<a href="${href}"${href === page ? ' aria-current="page"' : ''}>${esc(label)}</a>`)
     .join('');
 
-  const adminLink = isAdmin(profile)
+  const adminLink = approved && isAdmin(profile)
     ? `<a href="admin.html"${page === 'admin.html' ? ' aria-current="page"' : ''}>Admin</a>` : '';
 
   const account = profile
