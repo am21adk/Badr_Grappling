@@ -6,8 +6,8 @@
  * all live as environment variables on Cloudflare Pages. See README.md.
  */
 export const CONFIG = {
-  SUPABASE_URL: 'https://YOUR-PROJECT.supabase.co',
-  SUPABASE_ANON_KEY: 'YOUR-ANON-KEY',
+  SUPABASE_URL: 'https://zipvtslqgjvavfavupzr.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppcHZ0c2xxZ2p2YXZmYXZ1cHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MzAwNzQsImV4cCI6MjEwNTUwNjA3NH0.GoSwLS_rd8vOEzd8L9Mn2u62joKitVFEOJuzHwjfFR0',
 
   // Club details, from badrgrappling.co.uk and the club's Instagram.
   CLUB: {
