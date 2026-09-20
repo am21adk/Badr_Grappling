@@ -70,8 +70,13 @@ $$;
 
 
 -- =====================================================
--- New auth user -> pending member row
--- Signups land as 'pending' and an admin approves them.
+-- New auth user -> member row
+--
+-- Sign-ups are active straight away: the club would rather people got in
+-- and started training than waited on a coach. The gates that remain are
+-- 'inactive' (a coach closing someone's access) and delete_member().
+-- To go back to approving each one, set 'active' below to 'pending' and
+-- the Members tab's approval queue fills up again.
 -- =====================================================
 create or replace function handle_new_user()
 returns trigger
@@ -90,7 +95,7 @@ begin
     new.email,
     nullif(new.raw_user_meta_data ->> 'phone', ''),
     v_branch,
-    'pending'
+    'active'
   )
   on conflict (user_id) do nothing;
 
@@ -654,6 +659,56 @@ begin
           trim(p_reason), current_member_id(), 'manual');
 
   return jsonb_build_object('ok', true);
+end $$;
+
+
+-- Remove a member and their sign-in.
+--
+-- The login lives in auth.users; the member row and everything hanging off
+-- it — attendance, points, claims, wins — follows through the foreign keys.
+-- This is for sign-ups that a coach turns away, and for people who ask to be
+-- removed. Deactivating is the gentler option and keeps someone's history.
+--
+-- Deleting the auth user needs rights this function may not have on a
+-- locked-down project, so that part is attempted and reported on rather than
+-- assumed: the answer says whether the sign-in went too.
+create or replace function delete_member(p_member uuid)
+returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_member members%rowtype;
+  v_login_removed boolean := false;
+begin
+  select * into v_member from members where id = p_member;
+  if not found then
+    raise exception 'That member no longer exists';
+  end if;
+  if not can_manage_branch(v_member.branch_id) then
+    raise exception 'Not permitted to remove this member';
+  end if;
+  if v_member.id = current_member_id() then
+    raise exception 'You cannot delete your own account';
+  end if;
+  if v_member.role = 'super_admin' and not is_super_admin() then
+    raise exception 'Only a super-admin can remove a super-admin';
+  end if;
+
+  if v_member.user_id is not null then
+    begin
+      delete from auth.users where id = v_member.user_id;    -- the member row follows
+      v_login_removed := true;
+    exception when insufficient_privilege or undefined_table then
+      v_login_removed := false;
+    end;
+  end if;
+
+  delete from members where id = p_member;                   -- no-op if it already went
+
+  return jsonb_build_object(
+    'ok', true,
+    'name', v_member.full_name,
+    'login_removed', v_login_removed
+  );
 end $$;
 
 

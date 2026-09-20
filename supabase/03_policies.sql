@@ -78,9 +78,10 @@ create policy members_update_self on members
   for update using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
--- Branch admins can approve, edit and deactivate members of their own
--- branch. Only a super-admin can add rows by hand or delete them;
--- deactivating keeps a member's history intact, deleting does not.
+-- Branch admins edit and deactivate members of their own branch, and can
+-- remove one through delete_member(), which takes the sign-in with it. Only
+-- a super-admin can add or delete rows directly; deactivating keeps a
+-- member's history intact, deleting does not.
 create policy members_admin_update on members
   for update using (is_super_admin() or (is_admin() and branch_id is not distinct from current_member_branch()))
   with check (is_super_admin() or (is_admin() and branch_id is not distinct from current_member_branch()));
@@ -309,6 +310,7 @@ grant execute on function ensure_qr_token(uuid)               to authenticated;
 grant execute on function rotate_qr_token(uuid)               to authenticated;
 grant execute on function review_claim(uuid, boolean, text)   to authenticated;
 grant execute on function adjust_points(uuid, int, text, text) to authenticated;
+grant execute on function delete_member(uuid)                 to authenticated;
 grant execute on function leaderboard(uuid, date)             to authenticated;
 grant execute on function my_summary()                        to authenticated;
 grant execute on function my_points_history(int)              to authenticated;

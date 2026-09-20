@@ -76,10 +76,10 @@ form.addEventListener('submit', async (e) => {
   const needsConfirm = !data.session;
   say(msg,
     needsConfirm
-      ? `Account created. We have sent a confirmation link to ${email} — open it to finish. `
-        + 'A coach then approves your membership once you have trained with us.'
-      : 'Account created. A coach approves new members once they have trained with us — '
-        + 'the portal opens up as soon as they do.',
+      ? `Account created. We have sent a confirmation link to ${email} — open it, `
+        + 'then sign in and the member portal is yours.'
+      : 'Account created, and you are signed in. The member portal is open: '
+        + 'sessions and tutorials, your points and the leaderboard.',
     'good');
   msg.scrollIntoView({ block: 'center' });
 });

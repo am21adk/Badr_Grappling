@@ -30,8 +30,8 @@ async function routeSignedIn() {
   }
   if (profile.status === 'pending') {
     say(msg,
-      'Thanks for registering. A coach needs to approve your membership before the portal opens, '
-      + 'usually once you have trained with us. You will be able to sign in as soon as they have.', '');
+      'Your membership is waiting for a coach to look at it. You will be able to sign in '
+      + 'as soon as they have.', '');
     loginForm.hidden = true;
     return;
   }

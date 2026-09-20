@@ -229,6 +229,16 @@ const RPC = {
   rotate_qr_token: () => ({ ...RPC.ensure_qr_token(), token: crypto.randomBytes(16).toString('hex') }),
   checkin_with_token: (req, body) => body.p_token === 'expired' ? { status: 'expired' } : { status: 'ok', branch: 'London', date: day(0), session: 'Adults class' },
   review_claim: (req, body) => { const c = db.member_claims.find((x) => x.id === body.p_claim); c.status = body.p_approve ? 'approved' : 'rejected'; c.reviewed_at = iso(Date.now()); c.review_note = body.p_note; return { status: c.status, points: body.p_approve ? 50 : 0 }; },
+  delete_member: (req, body) => {
+    const m = db.members.find((x) => x.id === body.p_member);
+    if (!m) throw new Error('That member no longer exists');
+    if (m.id === me(req)?.id) throw new Error('You cannot delete your own account');
+    db.members = db.members.filter((x) => x.id !== body.p_member);
+    for (const t of ['attendance', 'points_ledger', 'member_claims']) db[t] = db[t].filter((r) => r.member_id !== body.p_member);
+    db.training_results = db.training_results.filter((r) => r.winner_id !== body.p_member);
+    if (m.email) delete USERS[m.email];
+    return { ok: true, name: m.full_name, login_removed: true };
+  },
   adjust_points: (req, body) => { db.points_ledger.push({ id: uuid(), member_id: body.p_member, points: body.p_points, reason: body.p_reason, rule_code: body.p_rule, awarded_by: me(req).id, source_type: 'manual', created_at: iso(Date.now()) }); return { ok: true }; },
 };
 
@@ -271,11 +281,11 @@ http.createServer(async (req, res) => {
     if (USERS[email]) return send(res, 422, { code: 'user_already_exists', msg: 'User already registered' }, { 'Content-Type': 'application/json' });
     const u = { id: `u-${uuid()}`, email, password: b.password };
     USERS[email] = u;
-    // What the on_auth_user_created trigger does: a pending member on the chosen branch.
+    // What the on_auth_user_created trigger does: an active member on the chosen branch.
     const branch = db.branches.find((x) => x.slug === b.data?.branch_slug);
     db.members.push({ id: uuid(), user_id: u.id, full_name: b.data?.full_name || email.split('@')[0], email, phone: b.data?.phone || null,
-      branch_id: branch?.id || null, role: 'member', status: 'pending', joined_on: day(0), created_at: iso(Date.now()) });
-    console.log(`[mock] signed up ${email} (pending)`);
+      branch_id: branch?.id || null, role: 'member', status: 'active', joined_on: day(0), created_at: iso(Date.now()) });
+    console.log(`[mock] signed up ${email} (active)`);
     // Behaves like Supabase with email confirmation switched off: signed straight in.
     return send(res, 200, session(u), { 'Content-Type': 'application/json' });
   }
@@ -297,8 +307,13 @@ http.createServer(async (req, res) => {
   if (rpc) {
     const fn = RPC[rpc[1]];
     if (!fn) return send(res, 404, { message: `no rpc ${rpc[1]}` });
-    const out = fn(req, await readBody(req));
-    return send(res, 200, out, { 'Content-Type': 'application/json' });
+    // A raise in a real function comes back as an error the page shows, not a crash.
+    try {
+      const out = fn(req, await readBody(req));
+      return send(res, 200, out, { 'Content-Type': 'application/json' });
+    } catch (e) {
+      return send(res, 400, { message: e.message }, { 'Content-Type': 'application/json' });
+    }
   }
 
   // ---- tables

@@ -66,8 +66,8 @@ async function run(me) {
         'This does not match a current check-in code. Scan the one on the wall again, or ask the coach.');
       break;
     case 'not_active':
-      show('bad', 'Membership not active yet',
-        'A coach needs to approve your membership before check-ins count. Speak to them on the mat today.');
+      show('bad', 'Membership not active',
+        'Your membership is not active, so check-ins do not count. Speak to a coach on the mat today.');
       break;
     default:
       show('bad', 'Check-in did not go through',

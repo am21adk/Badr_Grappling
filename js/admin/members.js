@@ -1,9 +1,12 @@
-/* Admin — members: approve sign-ups, assign branch, deactivate.
+/* Admin — members: assign branch, deactivate, delete.
  *
  * Branch admins manage their own branch's members. Moving someone to
  * another branch, and changing anyone's role, are super-admin actions
  * (the database refuses them from anyone else — see guard_member_self_update).
- * Deactivating keeps a member's history; nothing here deletes a person.
+ *
+ * Deactivating keeps a member's history. Declining a leftover sign-up, or
+ * deleting an account, removes the person and their sign-in for good:
+ * both go through delete_member(), which the database guards.
  */
 import { $, $$, esc, sb, dateShort } from '../core.js';
 
@@ -84,7 +87,8 @@ function paintPending(pending, orphans) {
 
   host.innerHTML = `
     <h2 class="h3 mb1">Waiting for approval</h2>
-    <p class="small muted mb1">Approve once they have trained with you. Approving opens the portal and lets their check-ins count.</p>
+    <p class="small muted mb1">New sign-ups are active straight away, so this is usually empty.
+      Anything here predates that, or signed up without a branch.</p>
     <div class="roster">${pending.map((m) => card(m, false)).join('')}${orphans.map((m) => card(m, true)).join('')}</div>`;
 
   $$('[data-approve]', host).forEach((b) => b.addEventListener('click', () => {
@@ -96,8 +100,10 @@ function paintPending(pending, orphans) {
   }));
   $$('[data-decline]', host).forEach((b) => b.addEventListener('click', () => {
     const row = b.closest('[data-id]');
-    if (!confirm('Decline this sign-up? Their account stays but cannot use the portal. You can reactivate it later.')) return;
-    update(row.dataset.id, { status: 'inactive' }, 'Sign-up declined.');
+    const who = $('strong', row).textContent;
+    if (!confirm(`Decline ${who}? Their account and sign-in are deleted. `
+      + 'If that turns out to be a mistake, they can register again.')) return;
+    remove(row.dataset.id, `${who} declined, and their account deleted.`);
   }));
 }
 
@@ -133,7 +139,8 @@ function paintList() {
             </select>` : ''}
           ${m.status === 'active'
             ? `<button class="linkish danger small" type="button" data-deactivate>Deactivate</button>`
-            : `<button class="linkish small" type="button" data-reactivate>Reactivate</button>`}`}
+            : `<button class="linkish small" type="button" data-reactivate>Reactivate</button>`}
+          <button class="linkish danger small" type="button" data-delete>Delete</button>`}
         </td>
       </tr>`;
   }).join('');
@@ -147,6 +154,13 @@ function paintList() {
   $$('[data-reactivate]', body).forEach((b) => b.addEventListener('click', () => {
     const m = rows.find((x) => x.id === b.closest('tr').dataset.id);
     update(m.id, { status: 'active' }, `${m.full_name} reactivated.`);
+  }));
+  $$('[data-delete]', body).forEach((b) => b.addEventListener('click', () => {
+    const m = rows.find((x) => x.id === b.closest('tr').dataset.id);
+    if (!confirm(`Delete ${m.full_name}'s account?\n\nThis removes their sign-in and their whole `
+      + 'record: attendance, points, claims and training results. Deactivating instead keeps all '
+      + 'of it.\n\nThis cannot be undone.')) return;
+    remove(m.id, `${m.full_name}'s account deleted.`);
   }));
   $$('[data-role]', body).forEach((s) => s.addEventListener('change', () => {
     const m = rows.find((x) => x.id === s.closest('tr').dataset.id);
@@ -164,6 +178,20 @@ async function update(id, patch, okText) {
   const { error } = await sb.from('members').update(patch).eq('id', id);
   if (error) return ctx.flash(error.message, 'flag');
   ctx.flash(okText, 'good');
+  ctx.invalidateMembers();
+  ctx.refreshCounts();
+  refresh();
+}
+
+/** Delete a member and their sign-in. The database does the guarding. */
+async function remove(id, okText) {
+  const { data, error } = await sb.rpc('delete_member', { p_member: id });
+  if (error) return ctx.flash(error.message, 'flag');
+  // The sign-in lives in Supabase's own table; say so plainly if it had to stay.
+  const loginStayed = data?.login_removed === false;
+  ctx.flash(loginStayed
+    ? `${okText} Their sign-in could not be removed from here — delete it in Supabase under Authentication → Users.`
+    : okText, loginStayed ? '' : 'good');
   ctx.invalidateMembers();
   ctx.refreshCounts();
   refresh();
