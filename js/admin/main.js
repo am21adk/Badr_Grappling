@@ -61,7 +61,7 @@ async function boot() {
       clearTimeout(ctx._t);
       if (text && kind === 'good') ctx._t = setTimeout(() => say(m, ''), 4000);
     },
-    members: (opts) => loadMembers(ctx, opts),
+    members: () => loadMembers(ctx),
     refreshCounts: () => refreshCounts(ctx),
     invalidateMembers: () => { memberCache.clear(); },
   };
@@ -105,15 +105,14 @@ async function boot() {
 /* ---------- shared member list for the current scope ---------- */
 const memberCache = new Map();
 
-async function loadMembers(ctx, { includePending = false } = {}) {
-  const key = `${ctx.branch.id}:${includePending}`;
+async function loadMembers(ctx) {
+  const key = ctx.branch.id;
   if (memberCache.has(key)) return memberCache.get(key);
-  let q = sb.from('members')
+  const { data, error } = await sb.from('members')
     .select('id, full_name, email, phone, role, status, branch_id, joined_on, created_at')
     .eq('branch_id', ctx.branch.id)
+    .eq('status', 'active')
     .order('full_name');
-  q = includePending ? q.in('status', ['active', 'pending']) : q.eq('status', 'active');
-  const { data, error } = await q;
   if (error) throw error;
   memberCache.set(key, data);
   return data;
@@ -144,10 +143,16 @@ async function refreshCounts(ctx) {
   }
   setCount('#n-approvals', claims);
 
-  const { count: pendingMembers } = await sb.from('members')
-    .select('id', { count: 'exact', head: true })
-    .eq('branch_id', branchId).eq('status', 'pending');
-  setCount('#n-members', pendingMembers || 0);
+  // Nothing on this tab needs a decision any more, bar anyone who ended up
+  // without a branch — and only a super-admin can see those.
+  let noBranch = 0;
+  if (ctx.isSuper) {
+    const { count } = await sb.from('members')
+      .select('id', { count: 'exact', head: true })
+      .is('branch_id', null).neq('status', 'inactive');
+    noBranch = count || 0;
+  }
+  setCount('#n-members', noBranch);
 
   if (ctx.isSuper) {
     const { count: newEnquiries } = await sb.from('branch_enquiries')

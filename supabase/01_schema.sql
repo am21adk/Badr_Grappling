@@ -12,7 +12,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type member_status as enum ('pending', 'active', 'inactive');
+  create type member_status as enum ('active', 'inactive');
 exception when duplicate_object then null; end $$;
 
 do $$ begin
@@ -65,7 +65,7 @@ create table if not exists members (
   phone       text,
   branch_id   uuid references branches(id) on delete set null,
   role        member_role   not null default 'member',
-  status      member_status not null default 'pending',
+  status      member_status not null default 'active',
   joined_on   date not null default current_date,
   referred_by uuid references members(id) on delete set null,
   notes       text,
@@ -74,6 +74,23 @@ create table if not exists members (
 create index if not exists members_branch_idx on members(branch_id);
 create index if not exists members_user_idx   on members(user_id);
 create index if not exists members_status_idx on members(status);
+
+-- There used to be a third status, 'pending': a sign-up waited for a coach
+-- to approve it. That step is gone — people sign up and are in. This moves
+-- a database built before the change over, and does nothing on a new one.
+do $$ begin
+  if exists (select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
+              where t.typname = 'member_status' and e.enumlabel = 'pending') then
+    update members set status = 'active' where status = 'pending';
+    alter type member_status rename to member_status_old;
+    create type member_status as enum ('active', 'inactive');
+    alter table members
+      alter column status drop default,
+      alter column status type member_status using status::text::member_status,
+      alter column status set default 'active';
+    drop type member_status_old;
+  end if;
+end $$;
 
 
 -- =====================================================

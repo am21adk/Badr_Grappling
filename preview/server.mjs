@@ -58,8 +58,6 @@ const db = {
   members: [
     ...people.map(([k, name, role], i) => ({ id: mid(k), user_id: `u-${k}`, full_name: name, email: `${k}@badr.test`, phone: i % 3 ? null : '07700 900' + (100 + i),
       branch_id: LON, role, status: 'active', joined_on: day(-400 + i * 30), created_at: iso(Date.now() - (400 - i * 30) * 864e5) })),
-    { id: uuid(), user_id: 'u-p1', full_name: 'Omar Siddiqui', email: 'omar@badr.test', phone: '07700 900555', branch_id: LON, role: 'member', status: 'pending', joined_on: day(-2), created_at: iso(Date.now() - 2 * 864e5) },
-    { id: uuid(), user_id: 'u-p2', full_name: 'Ibrahim Naqvi', email: 'ibrahim@badr.test', phone: null, branch_id: LON, role: 'member', status: 'pending', joined_on: day(-1), created_at: iso(Date.now() - 864e5) },
   ],
   ranks: [['E', 0], ['D', 250], ['C', 600], ['B', 1200], ['A', 2200], ['S', 4000]].map(([code, min], i) => ({ id: uuid(), code, label: `Rank ${code}`, min_points: min, sort_order: (i + 1) * 10 })),
   point_rules: [

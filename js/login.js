@@ -1,4 +1,4 @@
-/* Badr Grappling — sign in, pending-approval notice, password recovery. */
+/* Badr Grappling — sign in, deactivated-account notice, password recovery. */
 import { $, sb, qp, say, busy, currentUser, currentProfile } from './core.js';
 
 const msg = $('#login-msg');
@@ -28,13 +28,6 @@ async function routeSignedIn() {
     say(msg, 'Your account exists but has no member record yet. Please contact the club.', 'flag');
     return;
   }
-  if (profile.status === 'pending') {
-    say(msg,
-      'Your membership is waiting for a coach to look at it. You will be able to sign in '
-      + 'as soon as they have.', '');
-    loginForm.hidden = true;
-    return;
-  }
   if (profile.status === 'inactive') {
     say(msg, 'This membership is not currently active. Please speak to a coach if you think that is wrong.', 'flag');
     loginForm.hidden = true;
@@ -45,7 +38,8 @@ async function routeSignedIn() {
 
 /* ---------- arrival states ---------- */
 if (qp('confirmed')) say(msg, 'Email confirmed. Sign in below.', 'good');
-if (qp('pending'))   say(msg, 'Your membership is waiting for a coach to approve it.', '');
+if (qp('inactive'))  say(msg, 'This membership is not currently active. Please speak to a coach if you think that is wrong.', 'flag');
+if (qp('noaccount')) say(msg, 'Your sign-in works, but there is no member record attached to it. Please contact the club.', 'flag');
 
 // A reset link lands here with a recovery session.
 sb.auth.onAuthStateChange((event) => {
@@ -124,7 +118,7 @@ resetForm.addEventListener('submit', async (e) => {
 
 // Already signed in (and not mid-recovery)? Send them on. This runs last so
 // the form above is wired up before anything waits on the network.
-if (!location.hash.includes('type=recovery') && !qp('pending')) {
+if (!location.hash.includes('type=recovery') && !qp('inactive') && !qp('noaccount')) {
   const user = await currentUser();
   if (user) await routeSignedIn();
 }

@@ -196,11 +196,11 @@ export async function requireMember({ admin = false } = {}) {
   }
   const profile = await currentProfile();
   if (!profile) {
-    location.replace('login.html?pending=1');
+    location.replace('login.html?noaccount=1');
     return null;
   }
   if (profile.status !== 'active') {
-    location.replace('login.html?pending=1');
+    location.replace('login.html?inactive=1');
     return null;
   }
   if (admin && !isAdmin(profile)) {

@@ -51,7 +51,7 @@ form.addEventListener('submit', async (e) => {
     password,
     options: {
       // The on_auth_user_created trigger reads these to create the
-      // pending member row, on the right branch.
+      // member row, on the right branch.
       data: { full_name: name, phone, branch_slug: pick.value },
       emailRedirectTo: new URL('login.html?confirmed=1', location.href).href,
     },

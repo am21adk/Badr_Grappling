@@ -2,19 +2,19 @@
 -- Read-only: run this in the Supabase SQL editor any time. Changes nothing.
 
 select
-  -- What a new sign-up is given by the trigger.
-  (select case
-     when prosrc like '%''active''%'  then 'active — no approval needed'
-     when prosrc like '%''pending''%' then 'PENDING — a coach still has to approve'
-     else 'cannot tell, read handle_new_user by hand'
-   end from pg_proc where proname = 'handle_new_user')                as new_signups_land_as,
+  -- Should be 'active, inactive'. If 'pending' is still in there, the
+  -- schema file has not been pasted over this database yet.
+  (select string_agg(e.enumlabel::text, ', ' order by e.enumsortorder)
+     from pg_enum e join pg_type t on t.oid = e.enumtypid
+    where t.typname = 'member_status')                                as member_statuses,
 
-  -- Whether the delete work is present.
+  -- What a new sign-up is given. Should be 'active'.
+  (select column_default from information_schema.columns
+    where table_name = 'members' and column_name = 'status')          as new_signups_land_as,
+
+  -- Whether the delete work is present. Should be 1.
   (select count(*) from pg_proc where proname = 'delete_member')      as delete_member_installed,
 
-  -- Anyone left over from before the change.
-  (select count(*) from members where status = 'pending')             as members_still_waiting,
-
-  -- Sign-ups are wide open if this is off as well. Nothing to fix here,
+  -- Sign-ups are wide open if this is high as well. Nothing to fix here,
   -- just worth seeing: it is Authentication -> Providers -> Email.
   (select count(*) from auth.users where email_confirmed_at is null)  as logins_never_confirmed;

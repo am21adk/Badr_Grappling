@@ -163,16 +163,17 @@ of that file list the three steps. No page or table outside it needs to change.
   when a member attended every session in their age group that week, with more
   than one session held. A branch that trains once a week doesn't hand out a
   bonus for that one class.
-- **Sign-ups are active straight away.** The brief had a coach approving each
-  one; the club would rather people got training. What remains is *Deactivate*
-  (closing someone's access but keeping their history) and *Delete*. To go back
-  to approving each sign-up, change `'active'` to `'pending'` in
-  `handle_new_user` in `02_functions.sql`, and the Members tab's approval queue
-  fills up again. Worth knowing: with approvals off and email confirmation off,
-  anyone who finds the site can open an account and see the members' video
-  library and the leaderboard.
-- **Deleting an account really deletes it.** *Delete* on the Members tab, and
-  *Decline* on a leftover sign-up, both remove the person's sign-in along with
+- **There is no approval step.** The brief had a coach approving each sign-up;
+  the club would rather people got training. So the status `pending` is gone
+  from `member_status` altogether, not just defaulted away — a member is
+  `active` or `inactive`, nothing else. Pasting `01_schema.sql` over a database
+  that still has the old three-value type moves it across and makes anyone who
+  was waiting active. Worth knowing: with approvals gone and email confirmation
+  off, anyone who finds the site can open an account and see the members' video
+  library and the leaderboard. Turning confirmation on needs real SMTP; the
+  built-in sender stops at roughly two emails an hour.
+- **Deleting an account really deletes it.** *Delete* on the Members tab
+  removes the person's sign-in along with
   their attendance, points, claims and results, through `delete_member()`.
   Nobody can delete their own account, only a super-admin can remove another
   super-admin, and a branch admin is held to their own branch. If the database

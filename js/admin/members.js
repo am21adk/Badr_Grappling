@@ -1,6 +1,7 @@
 /* Admin — members: assign branch, deactivate, delete.
  *
- * Branch admins manage their own branch's members. Moving someone to
+ * There is no approval step: people sign up and are in. Branch admins
+ * manage their own branch's members. Moving someone to
  * another branch, and changing anyone's role, are super-admin actions
  * (the database refuses them from anyone else — see guard_member_self_update).
  *
@@ -15,7 +16,7 @@ let ctx, panel, rows = [];
 export async function init(c, p) {
   ctx = c; panel = p;
   panel.innerHTML = `
-    <div id="mb-pending"></div>
+    <div id="mb-nobranch"></div>
     <div class="between mt2 mb1">
       <h2 class="h3">Members at <span id="mb-branch"></span></h2>
       <div class="flex">
@@ -61,49 +62,46 @@ export async function refresh() {
     orphans = o || [];
   }
 
-  paintPending(rows.filter((m) => m.status === 'pending'), orphans);
+  paintNoBranch(orphans);
   paintList();
 }
 
-function paintPending(pending, orphans) {
-  const host = $('#mb-pending', panel);
-  if (!pending.length && !orphans.length) {
-    host.innerHTML = `<p class="small muted">No sign-ups waiting for approval.</p>`;
-    return;
-  }
-  const card = (m, orphan) => `
-    <div class="roster-row" data-id="${esc(m.id)}">
-      <div class="who">
-        <strong>${esc(m.full_name)}</strong>
-        <span class="small muted">&middot; ${esc(m.email || '')}${m.phone ? ` &middot; ${esc(m.phone)}` : ''} &middot; signed up ${esc(dateShort(m.created_at))}</span>
-      </div>
-      <div class="flex" style="gap:.4rem">
-        ${orphan ? `<label class="sr" for="ob-${esc(m.id)}">Branch</label>
-          <select id="ob-${esc(m.id)}" style="min-height:36px;width:auto">${ctx.branches.map((b) => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('')}</select>` : ''}
-        <button class="btn btn-sm" type="button" data-approve>Approve</button>
-        <button class="btn btn-sm btn-ghost" type="button" data-decline>Decline</button>
-      </div>
-    </div>`;
+// Signing up picks a branch, but a bad link or a renamed branch can leave
+// someone without one, and they are then in nobody's list. Super-admins get
+// them here so they can be placed.
+function paintNoBranch(orphans) {
+  const host = $('#mb-nobranch', panel);
+  if (!orphans.length) { host.innerHTML = ''; return; }
 
   host.innerHTML = `
-    <h2 class="h3 mb1">Waiting for approval</h2>
-    <p class="small muted mb1">New sign-ups are active straight away, so this is usually empty.
-      Anything here predates that, or signed up without a branch.</p>
-    <div class="roster">${pending.map((m) => card(m, false)).join('')}${orphans.map((m) => card(m, true)).join('')}</div>`;
+    <h2 class="h3 mb1">Signed up without a branch</h2>
+    <p class="small muted mb1">Give each one a branch and they appear in that branch's list.</p>
+    <div class="roster">${orphans.map((m) => `
+      <div class="roster-row" data-id="${esc(m.id)}">
+        <div class="who">
+          <strong>${esc(m.full_name)}</strong>
+          <span class="small muted">&middot; ${esc(m.email || '')}${m.phone ? ` &middot; ${esc(m.phone)}` : ''} &middot; signed up ${esc(dateShort(m.created_at))}</span>
+        </div>
+        <div class="flex" style="gap:.4rem">
+          <label class="sr" for="ob-${esc(m.id)}">Branch</label>
+          <select id="ob-${esc(m.id)}" style="min-height:36px;width:auto">${ctx.branches.map((b) => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('')}</select>
+          <button class="btn btn-sm" type="button" data-place>Save</button>
+          <button class="btn btn-sm btn-ghost" type="button" data-remove>Delete</button>
+        </div>
+      </div>`).join('')}</div>`;
 
-  $$('[data-approve]', host).forEach((b) => b.addEventListener('click', () => {
+  $$('[data-place]', host).forEach((b) => b.addEventListener('click', () => {
     const row = b.closest('[data-id]');
-    const branchSel = $('select', row);
-    const patch = { status: 'active' };
-    if (branchSel) patch.branch_id = branchSel.value;
-    update(row.dataset.id, patch, 'Approved — they can sign in to the portal now.');
+    const sel = $('select', row);
+    update(row.dataset.id, { branch_id: sel.value },
+      `${$('strong', row).textContent} moved to ${sel.selectedOptions[0].text}.`);
   }));
-  $$('[data-decline]', host).forEach((b) => b.addEventListener('click', () => {
+  $$('[data-remove]', host).forEach((b) => b.addEventListener('click', () => {
     const row = b.closest('[data-id]');
     const who = $('strong', row).textContent;
-    if (!confirm(`Decline ${who}? Their account and sign-in are deleted. `
+    if (!confirm(`Delete ${who}? Their account and sign-in go with it. `
       + 'If that turns out to be a mistake, they can register again.')) return;
-    remove(row.dataset.id, `${who} declined, and their account deleted.`);
+    remove(row.dataset.id, `${who}'s account deleted.`);
   }));
 }
 
@@ -111,8 +109,7 @@ function paintList() {
   const body = $('#mb-list', panel);
   const needle = $('#mb-find', panel).value.trim().toLowerCase();
   const status = $('#mb-status', panel).value;
-  const shown = rows.filter((m) => m.status !== 'pending'
-    && (!status || m.status === status)
+  const shown = rows.filter((m) => (!status || m.status === status)
     && (!needle || `${m.full_name} ${m.email || ''}`.toLowerCase().includes(needle)));
 
   if (!shown.length) { body.innerHTML = `<tr><td colspan="6" class="muted">No members match.</td></tr>`; return; }

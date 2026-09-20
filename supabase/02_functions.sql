@@ -73,10 +73,9 @@ $$;
 -- New auth user -> member row
 --
 -- Sign-ups are active straight away: the club would rather people got in
--- and started training than waited on a coach. The gates that remain are
--- 'inactive' (a coach closing someone's access) and delete_member().
--- To go back to approving each one, set 'active' below to 'pending' and
--- the Members tab's approval queue fills up again.
+-- and started training than waited on a coach. There is no approval step
+-- and no pending state. The two gates that remain are 'inactive' (a coach
+-- closing someone's access, keeping their history) and delete_member().
 -- =====================================================
 create or replace function handle_new_user()
 returns trigger
@@ -775,7 +774,7 @@ language sql stable security definer set search_path = public, pg_temp as $$
       left join branches b on b.id = m.branch_id
      where m.status = 'active'
        and (p_branch is null or m.branch_id = p_branch)
-       and is_active_member()          -- pending or deactivated accounts see nothing
+       and is_active_member()          -- deactivated accounts see nothing
   ),
   pts as (
     select l.member_id, sum(l.points)::bigint as total
