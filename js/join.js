@@ -59,10 +59,16 @@ form.addEventListener('submit', async (e) => {
   busy(btn, false);
 
   if (error) {
-    const exists = error.code === 'user_already_exists' || /already registered/i.test(error.message);
-    return fail(exists
-      ? 'There is already an account with that email. Sign in instead, or use "Forgotten your password?" on the sign-in page.'
-      : error.message);
+    const m = error.message || '';
+    if (error.code === 'user_already_exists' || /already registered/i.test(m)) {
+      return fail('There is already an account with that email. Sign in instead, or use "Forgotten your password?" on the sign-in page.');
+    }
+    if (/rate limit/i.test(m)) {
+      // The club's email service only allows so many messages an hour.
+      return fail('We could not send your confirmation email just now — too many have gone out in the last hour. '
+        + 'Please try again later, or speak to a coach and they will set your account up.');
+    }
+    return fail(m);
   }
 
   form.reset();
