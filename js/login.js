@@ -72,8 +72,14 @@ loginForm.addEventListener('submit', async (e) => {
   const { error } = await sb.auth.signInWithPassword({ email, password });
   busy(btn, false);
   if (error) {
-    say(msg, error.message === 'Invalid login credentials'
-      ? 'That email and password do not match an account.' : error.message, 'flag');
+    const m = error.message || '';
+    say(msg,
+      m === 'Invalid login credentials'
+        ? 'That email and password do not match an account.'
+        : /email not confirmed/i.test(m)
+          ? 'Your email address has not been confirmed yet. Open the link in the email we sent when you registered, then sign in.'
+          : m,
+      'flag');
     return;
   }
   await routeSignedIn();
