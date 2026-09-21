@@ -100,8 +100,20 @@ $('#l-forgot').addEventListener('click', async () => {
 resetForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const password = $('#r-pass').value;
+  const again = $('#r-pass2').value;
   if (password.length < 8) {
     say(msg, 'Your password needs at least 8 characters.', 'flag');
+    $('#r-pass').focus();
+    return;
+  }
+  if (!again) {
+    say(msg, 'Please type your new password again to confirm it.', 'flag');
+    $('#r-pass2').focus();
+    return;
+  }
+  if (again !== password) {
+    say(msg, 'The passwords do not match. Please type the same one in both boxes.', 'flag');
+    $('#r-pass2').focus();
     return;
   }
   const btn = $('#r-submit');
