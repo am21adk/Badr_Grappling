@@ -5,6 +5,7 @@
  * Adding a branch is only ever a new row — nothing in the code names one.
  */
 import { $, $$, esc, sb, busy, dayName, clockTime, slugify } from '../core.js';
+import { ask } from '../dialog.js';
 
 let ctx, panel;
 
@@ -109,7 +110,11 @@ async function paintBranch() {
       patch.sort_order = parseInt($('#sb-sort', form).value, 10) || 100;
       patch.is_active = $('#sb-live', form).checked;
       if (patch.is_active && (!patch.address || !patch.intro)) {
-        if (!confirm('This branch has no address or introduction yet. Put it live anyway?')) return;
+        if (!(await ask({
+          title: 'Put it live anyway?',
+          body: 'This branch has no address or introduction yet.',
+          confirm: 'Put it live',
+        }))) return;
       }
     }
     const btn = $('#sb-save', form);
@@ -168,7 +173,11 @@ async function paintTimetable() {
   }));
   $$('[data-del]', host).forEach((b) => b.addEventListener('click', async () => {
     const c = data.find((x) => x.id === b.closest('tr').dataset.id);
-    if (!confirm(`Delete “${c.label}” from the timetable? Past sessions and attendance are kept.`)) return;
+    if (!(await ask({
+      title: `Delete “${c.label}” from the timetable?`,
+      body: 'Past sessions and attendance are kept.',
+      confirm: 'Delete', danger: true,
+    }))) return;
     const { error: e } = await sb.from('class_times').delete().eq('id', c.id);
     if (e) return ctx.flash(e.message, 'flag');
     paintTimetable();

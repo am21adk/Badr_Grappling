@@ -189,6 +189,37 @@ a, button, input, select, textarea, summary {
 .btn-flag:hover { background: #7E241B; border-color: #7E241B; }
 .btn-row { display: flex; flex-wrap: wrap; gap: .75rem; }
 
+/* ---------- Confirm dialog (js/dialog.js) ----------
+   In place of the browser's own confirm(). A native <dialog>, so the
+   browser centres it and dims the page; these rules only dress it.
+   Square, flat and bordered like the rest of the site: no shadow, no
+   rounded card, and it appears without animating. */
+.ask {
+  position: fixed; inset: 0; margin: auto;
+  width: min(30rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  background: var(--paper); color: var(--ink);
+  border: 1px solid var(--ink);
+  border-top: 4px solid var(--brass);
+  border-radius: 1px;
+}
+.ask-danger { border-top-color: var(--flag); }
+.ask::backdrop { background: rgba(27, 26, 23, .62); }
+.ask form { padding: 1.75rem 1.75rem 1.5rem; }
+.ask-title { font-size: 1.375rem; line-height: 1.2; }
+.ask-body { margin-top: .75rem; color: var(--ink-soft); font-size: .9375rem; }
+.ask-actions {
+  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem;
+  margin-top: 1.5rem;
+}
+/* The page behind stays put while the box is open. */
+html:has(dialog.ask[open]) { overflow: hidden; }
+@media (max-width: 30rem) {
+  .ask form { padding: 1.4rem 1.25rem 1.25rem; }
+  .ask-actions .btn { flex: 1 1 auto; }
+}
+
 .link {
   color: var(--ink); text-decoration: none;
   border-bottom: 1px solid var(--brass-mid);

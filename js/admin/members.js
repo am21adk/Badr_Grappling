@@ -10,6 +10,7 @@
  * both go through delete_member(), which the database guards.
  */
 import { $, $$, esc, sb, dateShort } from '../core.js';
+import { ask } from '../dialog.js';
 
 let ctx, panel, rows = [];
 
@@ -96,11 +97,14 @@ function paintNoBranch(orphans) {
     update(row.dataset.id, { branch_id: sel.value },
       `${$('strong', row).textContent} moved to ${sel.selectedOptions[0].text}.`);
   }));
-  $$('[data-remove]', host).forEach((b) => b.addEventListener('click', () => {
+  $$('[data-remove]', host).forEach((b) => b.addEventListener('click', async () => {
     const row = b.closest('[data-id]');
     const who = $('strong', row).textContent;
-    if (!confirm(`Delete ${who}? Their account and sign-in go with it. `
-      + 'If that turns out to be a mistake, they can register again.')) return;
+    if (!(await ask({
+      title: `Delete ${who}?`,
+      body: 'Their account and sign-in go with it. If that turns out to be a mistake, they can register again.',
+      confirm: 'Delete account', danger: true,
+    }))) return;
     remove(row.dataset.id, `${who}'s account deleted.`);
   }));
 }
@@ -142,32 +146,45 @@ function paintList() {
       </tr>`;
   }).join('');
 
-  $$('[data-deactivate]', body).forEach((b) => b.addEventListener('click', () => {
+  $$('[data-deactivate]', body).forEach((b) => b.addEventListener('click', async () => {
     const tr = b.closest('tr');
     const m = rows.find((x) => x.id === tr.dataset.id);
-    if (!confirm(`Deactivate ${m.full_name}? They lose portal access and drop off the leaderboard. Their history is kept.`)) return;
+    if (!(await ask({
+      title: `Deactivate ${m.full_name}?`,
+      body: 'They lose portal access and drop off the leaderboard. Their history is kept.',
+      confirm: 'Deactivate', danger: true,
+    }))) return;
     update(m.id, { status: 'inactive' }, `${m.full_name} deactivated.`);
   }));
   $$('[data-reactivate]', body).forEach((b) => b.addEventListener('click', () => {
     const m = rows.find((x) => x.id === b.closest('tr').dataset.id);
     update(m.id, { status: 'active' }, `${m.full_name} reactivated.`);
   }));
-  $$('[data-delete]', body).forEach((b) => b.addEventListener('click', () => {
+  $$('[data-delete]', body).forEach((b) => b.addEventListener('click', async () => {
     const m = rows.find((x) => x.id === b.closest('tr').dataset.id);
-    if (!confirm(`Delete ${m.full_name}'s account?\n\nThis removes their sign-in and their whole `
-      + 'record: attendance, points, claims and training results. Deactivating instead keeps all '
-      + 'of it.\n\nThis cannot be undone.')) return;
+    if (!(await ask({
+      title: `Delete ${m.full_name}'s account?`,
+      body: 'This removes their sign-in and their whole record: attendance, points, claims and '
+        + 'training results. Deactivating instead keeps all of it.\n\nThis cannot be undone.',
+      confirm: 'Delete account', danger: true,
+    }))) return;
     remove(m.id, `${m.full_name}'s account deleted.`);
   }));
-  $$('[data-role]', body).forEach((s) => s.addEventListener('change', () => {
+  $$('[data-role]', body).forEach((s) => s.addEventListener('change', async () => {
     const m = rows.find((x) => x.id === s.closest('tr').dataset.id);
-    if (!confirm(`Change ${m.full_name}'s role to ${s.selectedOptions[0].text}?`)) { s.value = m.role; return; }
-    update(m.id, { role: s.value }, `${m.full_name} is now ${s.selectedOptions[0].text.toLowerCase()}.`);
+    const label = s.selectedOptions[0].text;
+    if (!(await ask({ title: `Change ${m.full_name}'s role to ${label}?`, confirm: 'Change role' }))) {
+      s.value = m.role; return;
+    }
+    update(m.id, { role: s.value }, `${m.full_name} is now ${label.toLowerCase()}.`);
   }));
-  $$('[data-move]', body).forEach((s) => s.addEventListener('change', () => {
+  $$('[data-move]', body).forEach((s) => s.addEventListener('change', async () => {
     const m = rows.find((x) => x.id === s.closest('tr').dataset.id);
-    if (!confirm(`Move ${m.full_name} to ${s.selectedOptions[0].text}?`)) { s.value = m.branch_id; return; }
-    update(m.id, { branch_id: s.value }, `${m.full_name} moved to ${s.selectedOptions[0].text}.`);
+    const label = s.selectedOptions[0].text;
+    if (!(await ask({ title: `Move ${m.full_name} to ${label}?`, confirm: 'Move' }))) {
+      s.value = m.branch_id; return;
+    }
+    update(m.id, { branch_id: s.value }, `${m.full_name} moved to ${label}.`);
   }));
 }
 

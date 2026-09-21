@@ -3,6 +3,7 @@
  * deleting a win takes them back.
  */
 import { $, $$, esc, sb, busy, dateShort } from '../core.js';
+import { ask } from '../dialog.js';
 
 let ctx, panel, members = [];
 
@@ -85,7 +86,11 @@ async function loadList() {
     </tr>`).join('');
 
   $$('[data-del]', body).forEach((b) => b.addEventListener('click', async () => {
-    if (!confirm('Remove this win? The points it awarded are taken back.')) return;
+    if (!(await ask({
+      title: 'Remove this win?',
+      body: 'The points it awarded are taken back.',
+      confirm: 'Remove win', danger: true,
+    }))) return;
     const { error: e } = await sb.from('training_results').delete().eq('id', b.dataset.del);
     if (e) return ctx.flash(e.message, 'flag');
     ctx.flash('Win removed and its points taken back.', 'good');

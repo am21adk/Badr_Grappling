@@ -6,6 +6,7 @@
  * coach can untick any entry, whichever route it came in by.
  */
 import { $, $$, esc, sb, busy, clockTime, dayName, dateShort } from '../core.js';
+import { ask } from '../dialog.js';
 
 let ctx, panel;
 let sessionId = null;
@@ -249,7 +250,11 @@ async function save() {
 
 async function deleteSession(s) {
   const n = present.size;
-  const ok = confirm(`Delete “${s.label}” on ${dateShort(s.held_on)}?${n ? `\n\nThis also removes ${n} register ${n === 1 ? 'entry' : 'entries'} and the points they earned.` : ''}`);
+  const ok = await ask({
+    title: `Delete “${s.label}” on ${dateShort(s.held_on)}?`,
+    body: n ? `This also removes ${n} register ${n === 1 ? 'entry' : 'entries'} and the points they earned.` : '',
+    confirm: 'Delete session', danger: true,
+  });
   if (!ok) return;
   const { error } = await sb.from('sessions').delete().eq('id', s.id);
   if (error) return ctx.flash(error.message, 'flag');

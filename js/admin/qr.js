@@ -6,6 +6,7 @@
  * member login, and stops working at midnight on Sunday.
  */
 import { $, esc, sb, busy, dateLong } from '../core.js';
+import { ask } from '../dialog.js';
 
 let ctx, panel;
 
@@ -93,7 +94,11 @@ async function paint(tok) {
     (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
   });
   $('#qr-rotate', panel).addEventListener('click', async (e) => {
-    if (!confirm('Issue a new code? The one currently printed or on screen will stop working immediately.')) return;
+    if (!(await ask({
+      title: 'Issue a new code?',
+      body: 'The one currently printed or on screen will stop working immediately.',
+      confirm: 'Issue new code', danger: true,
+    }))) return;
     busy(e.target, true, 'Issuing…');
     const { data, error } = await sb.rpc('rotate_qr_token', { p_branch: ctx.branch.id });
     if (error) { busy(e.target, false); ctx.flash(error.message, 'flag'); return; }

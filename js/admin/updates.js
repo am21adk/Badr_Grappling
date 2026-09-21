@@ -1,5 +1,6 @@
 /* Admin — club news and announcements. */
 import { $, $$, esc, sb, busy, dateShort, slugify } from '../core.js';
+import { ask } from '../dialog.js';
 import { uploadImage } from './upload.js';
 
 let ctx, panel, posts = [], editing = null;
@@ -110,7 +111,11 @@ function paintList() {
   $$('[data-edit]', body).forEach((b) => b.addEventListener('click', () => startEdit(b.closest('tr').dataset.id)));
   $$('[data-del]', body).forEach((b) => b.addEventListener('click', async () => {
     const u = posts.find((x) => x.id === b.closest('tr').dataset.id);
-    if (!confirm(`Delete “${u.title}”? This cannot be undone. To take it off the site but keep it, edit it and untick Publish.`)) return;
+    if (!(await ask({
+      title: `Delete “${u.title}”?`,
+      body: 'This cannot be undone. To take it off the site but keep it, edit it and untick Publish.',
+      confirm: 'Delete post', danger: true,
+    }))) return;
     const { error } = await sb.from('updates').delete().eq('id', u.id);
     if (error) return ctx.flash(error.message, 'flag');
     ctx.flash('Post deleted.', 'good');
