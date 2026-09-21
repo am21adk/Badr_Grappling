@@ -71,15 +71,19 @@ form.addEventListener('submit', async (e) => {
     return fail(m);
   }
 
+  // Signed in already (email confirmation is off): straight into the portal.
+  // replace(), so Back does not land on a form that has been submitted.
+  if (data.session) {
+    location.replace('portal.html?welcome=1');
+    return;
+  }
+
+  // Email confirmation is on, so there is no session until they click the link.
   form.reset();
   form.hidden = true;
-  const needsConfirm = !data.session;
   say(msg,
-    needsConfirm
-      ? `Account created. We have sent a confirmation link to ${email} — open it, `
-        + 'then sign in and the member portal is yours.'
-      : 'Account created, and you are signed in. The member portal is open: '
-        + 'sessions and tutorials, your points and the leaderboard.',
+    `Account created. We have sent a confirmation link to ${email} — open it, `
+      + 'then sign in and the member portal is yours.',
     'good');
   msg.scrollIntoView({ block: 'center' });
 });

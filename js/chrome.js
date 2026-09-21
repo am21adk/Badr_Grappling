@@ -8,7 +8,7 @@ const PUBLIC_NAV = [
   ['index.html',        'Home'],
   ['branches.html',     'Branches'],
   ['updates.html',      'Updates'],
-  ['donate.html',       'Support us'],
+  ['donate.html',       'Fundraise'],
 ];
 
 // Only worth showing to someone who has not got an account yet.
@@ -140,7 +140,7 @@ function mountFooter(foot, signedIn) {
             <li><a href="branches.html">Branches &amp; timetable</a></li>
             ${signedIn ? '' : '<li><a href="join.html">Join the club</a></li>'}
             <li><a href="updates.html">Updates</a></li>
-            <li><a href="donate.html">Support us</a></li>
+            <li><a href="donate.html">Fundraise</a></li>
           </ul>
         </div>
         <div>

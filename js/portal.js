@@ -14,7 +14,11 @@ async function boot() {
   if (qp('denied')) say($('#p-flash'), 'That page is for coaches and admins only.', '');
 
   const first = (me.full_name || '').split(' ')[0] || 'there';
-  $('#p-hello').textContent = `Welcome back, ${first}`;
+  // Straight from registering, "back" would be wrong. Drop the flag from the
+  // address once read, so a refresh or a bookmark says "Welcome back".
+  const fresh = !!qp('welcome');
+  if (fresh) history.replaceState(null, '', location.pathname);
+  $('#p-hello').textContent = `${fresh ? 'Welcome' : 'Welcome back'}, ${first}`;
   $('#p-branch').textContent = me.branches?.name ? `${me.branches.name} member` : 'Member';
 
   initTabs($('.admin-tabs'), {

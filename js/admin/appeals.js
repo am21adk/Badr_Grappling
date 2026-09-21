@@ -248,7 +248,7 @@ async function save(e) {
       : await sb.from('appeals').insert(row);
     if (error) throw new Error(error.code === '23505' ? 'Another appeal already uses that web address.' : error.message);
     busy(btn, false);
-    ctx.flash(editing ? 'Appeal updated.' : `“${title}” created${row.is_active ? ' and live on the Support us page' : ''}.`, 'good');
+    ctx.flash(editing ? 'Appeal updated.' : `“${title}” created${row.is_active ? ' and live on the Fundraise page' : ''}.`, 'good');
     editing = null;
     await refresh();
   } catch (err) {
