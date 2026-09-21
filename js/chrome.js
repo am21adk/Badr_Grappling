@@ -32,6 +32,16 @@ export async function mountChrome() {
   if (host) await mountHeader(host, signedIn);
   const foot = $('#foot');
   if (foot) mountFooter(foot, signedIn);
+  if (signedIn) swapMemberCalls();
+}
+
+// Public pages ask people to join. Someone already signed in has done that,
+// so any button carrying data-member-href points somewhere useful instead.
+function swapMemberCalls() {
+  document.querySelectorAll('[data-member-href]').forEach((el) => {
+    el.setAttribute('href', el.dataset.memberHref);
+    if (el.dataset.memberLabel) el.textContent = el.dataset.memberLabel;
+  });
 }
 
 async function mountHeader(host, signedIn) {
