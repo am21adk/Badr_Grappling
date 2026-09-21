@@ -14,34 +14,38 @@ import { ask } from '../dialog.js';
 
 let ctx, panel, rows = [];
 
+const HEAD = `<tr>
+  <th scope="col">Name</th><th scope="col">Contact</th><th scope="col">Joined</th>
+  <th scope="col">Role</th><th scope="col"><span class="sr">Actions</span></th>
+</tr>`;
+
 export async function init(c, p) {
   ctx = c; panel = p;
   panel.innerHTML = `
     <div id="mb-nobranch"></div>
     <div class="between mt2 mb1">
       <h2 class="h3">Members at <span id="mb-branch"></span></h2>
-      <div class="flex">
-        <label class="sr" for="mb-find">Search members</label>
-        <input id="mb-find" type="search" placeholder="Search name or email" style="max-width:15rem">
-        <label class="sr" for="mb-status">Show</label>
-        <select id="mb-status" style="max-width:10rem">
-          <option value="active">Active</option>
-          <option value="inactive">Deactivated</option>
-          <option value="">Everyone</option>
-        </select>
-      </div>
+      <label class="sr" for="mb-find">Search members</label>
+      <input id="mb-find" type="search" placeholder="Search name or email" style="max-width:15rem">
     </div>
     <div class="table-scroll">
       <table class="table">
-        <thead><tr>
-          <th scope="col">Name</th><th scope="col">Contact</th><th scope="col">Joined</th>
-          <th scope="col">Role</th><th scope="col">Status</th><th scope="col"><span class="sr">Actions</span></th>
-        </tr></thead>
-        <tbody id="mb-list"><tr><td colspan="6" class="load">Loading…</td></tr></tbody>
+        <thead>${HEAD}</thead>
+        <tbody id="mb-list"><tr><td colspan="5" class="load">Loading…</td></tr></tbody>
       </table>
-    </div>`;
+    </div>
+    <section id="mb-off" class="mt3" hidden>
+      <h2 class="h3 mb1">Deactivated <span class="muted" id="mb-off-n"></span></h2>
+      <p class="small muted mb1">They can't use the portal or check in, and they're off the
+        leaderboard. Their history is kept, so reactivating brings them back as they were.</p>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>${HEAD}</thead>
+          <tbody id="mb-off-list"></tbody>
+        </table>
+      </div>
+    </section>`;
   $('#mb-find', panel).addEventListener('input', paintList);
-  $('#mb-status', panel).addEventListener('change', paintList);
   await refresh();
 }
 
@@ -51,7 +55,7 @@ export async function refresh() {
     .select('id, full_name, email, phone, role, status, branch_id, joined_on, created_at')
     .eq('branch_id', ctx.branch.id)
     .order('full_name');
-  if (error) { $('#mb-list', panel).innerHTML = `<tr><td colspan="6" class="muted">Could not load members.</td></tr>`; return; }
+  if (error) { $('#mb-list', panel).innerHTML = `<tr><td colspan="5" class="muted">Could not load members.</td></tr>`; return; }
   rows = data;
 
   // A super-admin also sees anyone who signed up without a branch.
@@ -110,13 +114,22 @@ function paintNoBranch(orphans) {
 }
 
 function paintList() {
-  const body = $('#mb-list', panel);
   const needle = $('#mb-find', panel).value.trim().toLowerCase();
-  const status = $('#mb-status', panel).value;
-  const shown = rows.filter((m) => (!status || m.status === status)
-    && (!needle || `${m.full_name} ${m.email || ''}`.toLowerCase().includes(needle)));
+  const match = (m) => !needle || `${m.full_name} ${m.email || ''}`.toLowerCase().includes(needle);
 
-  if (!shown.length) { body.innerHTML = `<tr><td colspan="6" class="muted">No members match.</td></tr>`; return; }
+  fill($('#mb-list', panel), rows.filter((m) => m.status === 'active' && match(m)),
+    needle ? 'No members match.' : 'No active members yet.');
+
+  // Deactivated members get a list of their own, on show whenever there are
+  // any, so bringing someone back never means hunting for a filter.
+  const off = rows.filter((m) => m.status === 'inactive');
+  $('#mb-off', panel).hidden = !off.length;
+  $('#mb-off-n', panel).textContent = off.length ? `(${off.length})` : '';
+  fill($('#mb-off-list', panel), off.filter(match), 'No deactivated members match.');
+}
+
+function fill(body, shown, emptyText) {
+  if (!shown.length) { body.innerHTML = `<tr><td colspan="5" class="muted">${esc(emptyText)}</td></tr>`; return; }
 
   const roleLabel = { member: 'Member', admin: 'Branch admin', super_admin: 'Super-admin' };
   body.innerHTML = shown.map((m) => {
@@ -132,7 +145,6 @@ function paintList() {
           <select id="role-${esc(m.id)}" data-role style="min-height:36px">
             ${Object.entries(roleLabel).map(([v, l]) => `<option value="${v}"${m.role === v ? ' selected' : ''}>${l}</option>`).join('')}
           </select>` : esc(roleLabel[m.role])}</td>
-        <td><span class="pill ${m.status === 'active' ? 'pill-good' : ''}">${m.status === 'active' ? 'Active' : 'Deactivated'}</span></td>
         <td class="action-cell">${isMe || locked ? '' : `
           ${ctx.isSuper ? `<label class="sr" for="mv-${esc(m.id)}">Move to branch</label>
             <select id="mv-${esc(m.id)}" data-move style="min-height:36px;width:auto">
@@ -151,10 +163,11 @@ function paintList() {
     const m = rows.find((x) => x.id === tr.dataset.id);
     if (!(await ask({
       title: `Deactivate ${m.full_name}?`,
-      body: 'They lose portal access and drop off the leaderboard. Their history is kept.',
+      body: 'They lose portal access and drop off the leaderboard. Their history is kept, '
+        + 'and they move to the Deactivated list below, where you can reactivate them.',
       confirm: 'Deactivate', danger: true,
     }))) return;
-    update(m.id, { status: 'inactive' }, `${m.full_name} deactivated.`);
+    update(m.id, { status: 'inactive' }, `${m.full_name} deactivated. They're in the Deactivated list below.`);
   }));
   $$('[data-reactivate]', body).forEach((b) => b.addEventListener('click', () => {
     const m = rows.find((x) => x.id === b.closest('tr').dataset.id);
