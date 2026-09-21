@@ -1,5 +1,5 @@
 /* POST /api/checkout
- * Starts a Stripe Checkout session for a contribution to one appeal.
+ * Starts a Stripe Checkout session for a donation to one appeal.
  * Public: no sign-in needed to support the club.
  */
 import { json, need, supabase, stripe, clip, ConfigError } from '../_lib/util.js';
@@ -11,7 +11,7 @@ export async function onRequestPost({ request, env }) {
   try {
     need(env, 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY');
   } catch {
-    return json(503, { error: 'Contributions are not switched on yet. Please try again soon.' });
+    return json(503, { error: 'Donations are not switched on yet. Please try again soon.' });
   }
 
   let body;
@@ -59,7 +59,7 @@ export async function onRequestPost({ request, env }) {
           currency: 'gbp',
           unit_amount: amount,
           product_data: {
-            name: `${recurring ? 'Monthly contribution' : 'Contribution'} to Badr Grappling`,
+            name: `${recurring ? 'Monthly donation' : 'Donation'} to Badr Grappling`,
             description: appeal.title,
           },
           ...(recurring ? { recurring: { interval: 'month' } } : {}),
@@ -92,7 +92,7 @@ export async function onRequestPost({ request, env }) {
 
     return json(200, { url: session.url });
   } catch (err) {
-    if (err instanceof ConfigError) return json(503, { error: 'Contributions are not switched on yet.' });
+    if (err instanceof ConfigError) return json(503, { error: 'Donations are not switched on yet.' });
     console.error('[checkout]', err);
     return json(502, { error: 'Payment could not be started. Please try again.' });
   }

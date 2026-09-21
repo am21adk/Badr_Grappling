@@ -1,8 +1,8 @@
-/* Badr Grappling — appeals list, single appeal and the contribution form.
+/* Badr Grappling — appeals list, single appeal and the donation form.
  *
- * Copy on these pages describes giving as supporting or contributing to
- * the club. The club is not registered as a charity, so none of that
- * language — or any tax-relief wording — appears anywhere here.
+ * Copy on these pages describes giving as donating to or supporting the
+ * club. The club is not registered as a charity, so no charity wording —
+ * and no tax-relief or Gift Aid wording — appears anywhere here.
  */
 import { $, $$, esc, sb, qp, say, busy, money, dateLong, paragraphs } from './core.js';
 
@@ -31,7 +31,7 @@ function progress(a, t) {
   const count = t?.donation_count || 0;
   if (!a.target_pence) {
     return `<p class="appeal-fig"><span><b>${esc(money(raised))}</b> raised</span>
-      <span class="muted">${count} ${count === 1 ? 'contribution' : 'contributions'}</span></p>`;
+      <span class="muted">${count} ${count === 1 ? 'donation' : 'donations'}</span></p>`;
   }
   const pct = Math.min(100, Math.round((raised / a.target_pence) * 100));
   return `
@@ -41,7 +41,7 @@ function progress(a, t) {
     </div>
     <p class="appeal-fig">
       <span><b>${esc(money(raised))}</b> of ${esc(money(a.target_pence))}</span>
-      <span class="muted">${pct}% &middot; ${count} ${count === 1 ? 'contribution' : 'contributions'}</span>
+      <span class="muted">${pct}% &middot; ${count} ${count === 1 ? 'donation' : 'donations'}</span>
     </p>`;
 }
 
@@ -82,7 +82,7 @@ async function paintList() {
         <p class="small muted">${esc(String(a.description || '').split(/\n\s*\n/)[0].slice(0, 200))}</p>
         ${progress(a, totals[a.id])}
         ${deadlineLine(a)}
-        <p class="mt1"><span class="link">${isClosed(a) ? 'See how it went' : 'Contribute'}</span></p>
+        <p class="mt1"><span class="link">${isClosed(a) ? 'See how it went' : 'Donate'}</span></p>
       </div>
     </a>`).join('');
 }
@@ -95,7 +95,7 @@ async function paintAppeal() {
   const host = $('#a-body');
   const msg = $('#a-msg');
 
-  if (qp('thanks'))    say(msg, 'Thank you. Your contribution has gone through, and Stripe has emailed you a receipt.', 'good');
+  if (qp('thanks'))    say(msg, 'Thank you. Your donation has gone through, and Stripe has emailed you a receipt.', 'good');
   if (qp('cancelled')) say(msg, 'Payment cancelled — nothing has been taken.', '');
 
   const { data: a, error } = await sb.from('appeals')
@@ -109,7 +109,7 @@ async function paintAppeal() {
     return;
   }
 
-  document.title = `${a.title} — Support Badr Grappling`;
+  document.title = `${a.title} — Fundraise — Badr Grappling`;
   $('#a-title').textContent = a.title;
   const totals = await totalsFor([a.id]);
   const closed = isClosed(a) || !a.is_active;
@@ -124,9 +124,9 @@ async function paintAppeal() {
     <div class="panel">
       ${closed ? `
         <h2 class="h3 mb1">This appeal has closed</h2>
-        <p class="small">Thank you to everyone who contributed.
+        <p class="small">Thank you to everyone who donated.
           <a class="link" href="donate.html">See open appeals</a>.</p>` : `
-      <h2 class="h3 mb1">Contribute to this appeal</h2>
+      <h2 class="h3 mb1">Donate to this appeal</h2>
       <form method="post" id="give-form" novalidate>
         <fieldset>
           <legend class="sr">How often</legend>

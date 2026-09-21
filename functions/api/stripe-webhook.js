@@ -1,6 +1,6 @@
 /* POST /api/stripe-webhook
  *
- * Stripe is the only thing that can mark a contribution as paid. Events:
+ * Stripe is the only thing that can mark a donation as paid. Events:
  *   checkout.session.completed / async_payment_succeeded -> first payment paid
  *   checkout.session.async_payment_failed / expired      -> failed
  *   invoice.paid (subscription_cycle)                    -> a monthly renewal

@@ -1,7 +1,7 @@
 /* Admin — fundraising appeals and what each has raised.
  *
- * Public copy for appeals talks about supporting or contributing to the
- * club. The club is not registered as a charity: keep charity and tax-relief
+ * Public copy for appeals talks about donating to or supporting the club.
+ * The club is not registered as a charity: keep charity and tax-relief
  * wording out of titles and descriptions written here too.
  */
 import { $, $$, esc, sb, busy, money, dateShort, slugify } from '../core.js';
@@ -42,7 +42,7 @@ export async function init(c, p) {
             <label for="apl-desc">Description</label>
             <textarea id="apl-desc" maxlength="5000" required aria-describedby="apl-desc-hint"></textarea>
             <p class="hint" id="apl-desc-hint">What the money is for and why it matters. Leave a blank line between paragraphs.
-              Describe it as supporting or contributing to the club.</p>
+              Describe it as donating to or supporting the club.</p>
           </div>
           <div class="field">
             <label for="apl-img">Image</label>
@@ -137,7 +137,7 @@ function paintList() {
         <td>${!a.is_active ? '<span class="pill">Hidden</span>' : closed ? '<span class="pill">Closed</span>' : '<span class="pill pill-good">Live</span>'}</td>
         <td class="action-cell">
           <a class="linkish small" href="appeal.html?slug=${encodeURIComponent(a.slug)}" target="_blank" rel="noopener">View</a>
-          <button class="linkish small" type="button" data-dons>Contributions</button>
+          <button class="linkish small" type="button" data-dons>Donations</button>
           <button class="linkish small" type="button" data-edit>Edit</button>
         </td>
       </tr>`;
@@ -150,18 +150,18 @@ function paintList() {
 async function showDonations(id) {
   const a = appeals.find((x) => x.id === id);
   const host = $('#apl-dons', panel);
-  host.innerHTML = `<p class="load">Loading contributions…</p>`;
+  host.innerHTML = `<p class="load">Loading donations…</p>`;
   const { data, error } = await sb.from('donations')
     .select('created_at, paid_at, amount_pence, is_recurring, donor_name, donor_email, is_anonymous, message, status')
     .eq('appeal_id', id).neq('status', 'pending')
     .order('created_at', { ascending: false }).limit(500);
-  if (error) { host.innerHTML = `<p class="empty">Could not load contributions.</p>`; return; }
+  if (error) { host.innerHTML = `<p class="empty">Could not load donations.</p>`; return; }
 
   const paid = data.filter((d) => d.status === 'paid');
   const sum = paid.reduce((n, d) => n + d.amount_pence, 0);
   host.innerHTML = `
     <div class="between mb1">
-      <h3 class="h3">${esc(a.title)}: contributions</h3>
+      <h3 class="h3">${esc(a.title)}: donations</h3>
       <p class="small"><strong>${esc(money(sum))}</strong> from ${paid.length} ${paid.length === 1 ? 'payment' : 'payments'}</p>
     </div>
     ${data.length ? `<div class="table-scroll"><table class="table">
@@ -174,7 +174,7 @@ async function showDonations(id) {
           <td class="num">${esc(money(d.amount_pence))}${d.is_recurring ? '<br><span class="small muted">monthly</span>' : ''}</td>
           <td><span class="pill ${d.status === 'paid' ? 'pill-good' : d.status === 'refunded' ? 'pill-flag' : ''}">${esc(d.status)}</span></td>
         </tr>`).join('')}</tbody></table></div>`
-      : `<p class="empty">No contributions yet.</p>`}
+      : `<p class="empty">No donations yet.</p>`}
     <p class="hint mt1">Names marked “Keep private” asked not to be shown publicly. Refunds are made in the Stripe dashboard and update here automatically.</p>`;
   host.scrollIntoView({ block: 'start' });
 }
@@ -220,7 +220,7 @@ async function save(e) {
   const target = $('#apl-target', panel).value;
   if (!title || !slug || !description) return ctx.flash('An appeal needs a title, a web address and a description.', 'flag');
   if (BANNED.test(`${title} ${description}`)) {
-    return ctx.flash('Badr Grappling is not a registered charity, so appeal copy cannot mention charity, charitable giving, Gift Aid or tax relief. Describe it as supporting or contributing to the club.', 'flag');
+    return ctx.flash('Badr Grappling is not a registered charity, so appeal copy cannot mention charity, charitable giving, Gift Aid or tax relief. Describe it as donating to or supporting the club.', 'flag');
   }
   if (target && !(Number(target) >= 1)) return ctx.flash('The target must be at least £1, or left empty.', 'flag');
 

@@ -194,13 +194,14 @@ of that file list the three steps. No page or table outside it needs to change.
 - **The carousel moves on by itself every 6 seconds, and loops.** It never
   overrides someone's own scroll. It holds still while a mouse is over it,
   while keyboard focus is in it, while a finger is on it, while a swipe is
-  settling, and while it's off-screen or the tab is hidden. The pause button
-  in its caption bar stops it altogether, which WCAG 2.2.2 requires for
-  anything that moves by itself. It starts paused for anyone whose device is
-  set to reduce motion. The delay is `AUTOPLAY_MS` in `js/home.js`.
-- **Contribution copy says "support" and "contribute".** The appeal editor
-  refuses titles or descriptions that mention charity, charitable giving, Gift
-  Aid or tax relief.
+  settling, and while it's off-screen or the tab is hidden, and it never
+  starts for anyone whose device is set to reduce motion. There is no pause
+  button or slide counter, at the club's request. WCAG 2.2.2 asks for a way to
+  stop anything that moves by itself, so those holds are standing in for it.
+  The delay is `AUTOPLAY_MS` in `js/home.js`.
+- **Fundraising copy says "donate".** The club is not a registered charity,
+  so the appeal editor refuses titles or descriptions that mention charity,
+  charitable giving, Gift Aid or tax relief. Donating is fine.
 
 ## Before launch, check with the club
 
