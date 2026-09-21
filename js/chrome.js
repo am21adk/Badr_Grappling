@@ -9,6 +9,10 @@ const PUBLIC_NAV = [
   ['branches.html',     'Branches'],
   ['updates.html',      'Updates'],
   ['donate.html',       'Support us'],
+];
+
+// Only worth showing to someone who has not got an account yet.
+const JOIN_NAV = [
   ['join.html',         'Join'],
 ];
 
@@ -23,25 +27,26 @@ function here() {
 }
 
 export async function mountChrome() {
+  const signedIn = !!(await currentUser());
   const host = $('#masthead');
-  if (host) await mountHeader(host);
+  if (host) await mountHeader(host, signedIn);
   const foot = $('#foot');
-  if (foot) mountFooter(foot);
+  if (foot) mountFooter(foot, signedIn);
 }
 
-async function mountHeader(host) {
+async function mountHeader(host, signedIn) {
   const page = here();
-  const user = await currentUser();
-  const profile = user ? await currentProfile() : null;
+  const profile = signedIn ? await currentProfile() : null;
 
-  // The portal and leaderboard open up once a coach has approved the member.
-  const approved = profile?.status === 'active';
-  const links = [...PUBLIC_NAV, ...(approved ? MEMBER_NAV : [])]
+  // The portal and leaderboard are for members whose account is still active.
+  const isMember = profile?.status === 'active';
+  // Someone signed in has an account already; inviting them to join is noise.
+  const links = [...PUBLIC_NAV, ...(signedIn ? [] : JOIN_NAV), ...(isMember ? MEMBER_NAV : [])]
     .map(([href, label]) =>
       `<a href="${href}"${href === page ? ' aria-current="page"' : ''}>${esc(label)}</a>`)
     .join('');
 
-  const adminLink = approved && isAdmin(profile)
+  const adminLink = isMember && isAdmin(profile)
     ? `<a href="admin.html"${page === 'admin.html' ? ' aria-current="page"' : ''}>Admin</a>` : '';
 
   const account = profile
@@ -109,7 +114,7 @@ async function mountHeader(host) {
   }));
 }
 
-function mountFooter(foot) {
+function mountFooter(foot, signedIn) {
   const year = new Date().getFullYear();
   foot.className = 'foot';
   foot.innerHTML = `
@@ -123,7 +128,7 @@ function mountFooter(foot) {
           <h4>Club</h4>
           <ul>
             <li><a href="branches.html">Branches &amp; timetable</a></li>
-            <li><a href="join.html">Join the club</a></li>
+            ${signedIn ? '' : '<li><a href="join.html">Join the club</a></li>'}
             <li><a href="updates.html">Updates</a></li>
             <li><a href="donate.html">Support us</a></li>
           </ul>
