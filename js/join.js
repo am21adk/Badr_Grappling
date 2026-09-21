@@ -39,10 +39,13 @@ form.addEventListener('submit', async (e) => {
   const email = $('#j-email').value.trim();
   const phone = $('#j-phone').value.trim();
   const password = $('#j-pass').value;
+  const again = $('#j-pass2').value;
 
   if (!name)  return fail('Please enter your full name.', '#j-name');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('Please enter a valid email address.', '#j-email');
   if (password.length < 8) return fail('Your password needs at least 8 characters.', '#j-pass');
+  if (!again) return fail('Please type your password again to confirm it.', '#j-pass2');
+  if (again !== password) return fail('The passwords do not match. Please type the same one in both boxes.', '#j-pass2');
   if (!$('#j-terms').checked) return fail('Please read and agree to the participation terms.', '#j-terms');
 
   busy(btn, true, 'Creating account…');
