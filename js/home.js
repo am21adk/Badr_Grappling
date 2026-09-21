@@ -7,8 +7,8 @@ import { $, $$, esc, sb, CLUB, onBranch, clockTime, dayName, dateShort } from '.
    Built on native overflow scrolling with scroll-snap, so
    a swipe on a phone is the browser's own scroll — there
    is nothing to fight with. The arrows sit on the sides of
-   the photo; the caption and a counter sit in a bar under
-   it, so no face is covered by text.
+   the photo; the caption sits in a bar under it, so no face
+   is covered by text.
 
    It loops. A copy of the last photo sits before the first
    and a copy of the first after the last, so "next" on the
@@ -22,13 +22,15 @@ import { $, $$, esc, sb, CLUB, onBranch, clockTime, dayName, dateShort } from '.
    while nobody is using it. It holds still while the pointer
    is over it, while keyboard focus is in it, while a finger is
    on it, while a swipe or arrow press is still settling, and
-   while it is off-screen or the tab is hidden. A pause button
-   stops it altogether (WCAG 2.2.2), and it starts paused for
-   anyone whose device asks for reduced motion.
+   while it is off-screen or the tab is hidden. It never starts
+   at all for anyone whose device asks for reduced motion.
+
+   There is deliberately no pause button and no slide counter:
+   the club asked for the bar to carry the caption alone. WCAG
+   2.2.2 wants a way to stop moving content, so the holds above
+   and the reduced-motion check are doing that work instead.
    ===================================================== */
 const AUTOPLAY_MS = 6000;
-const ICON_PAUSE = '<svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M4 3h3v10H4zM9 3h3v10H9z"/></svg>';
-const ICON_PLAY  = '<svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M5 3l8 5-8 5z"/></svg>';
 
 function initCarousel() {
   const root = $('#carousel');
@@ -43,33 +45,15 @@ function initCarousel() {
 
   const bar = document.createElement('div');
   bar.className = 'carousel-bar';
-  // The caption and counter repeat what each slide already says (its
-  // figcaption and "1 of 3" label), so screen readers skip the copies.
-  bar.innerHTML = `
-    <p class="carousel-caption" aria-hidden="true"></p>
-    ${loops ? `<p class="carousel-count" aria-hidden="true"></p>` : ''}`;
+  // The caption repeats what the slide already says in its figcaption,
+  // so screen readers skip the copy.
+  bar.innerHTML = `<p class="carousel-caption" aria-hidden="true"></p>`;
   root.append(bar);
   const caption = $('.carousel-caption', bar);
-  const counter = $('.carousel-count', bar);
 
-  // Autoplay state. `playing` is the reader's choice (the pause button);
-  // the rest are reasons to hold still for a moment.
-  let playing = loops && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Autoplay state. Every one of these is a reason to hold still.
+  const playing = loops && !matchMedia('(prefers-reduced-motion: reduce)').matches;
   let hovering = false, focused = false, onScreen = true, touching = false, timer = null;
-  const toggle = loops ? document.createElement('button') : null;
-  if (toggle) {
-    toggle.type = 'button';
-    toggle.className = 'carousel-play';
-    toggle.setAttribute('aria-controls', 'carousel-track');
-    toggle.addEventListener('click', () => { playing = !playing; paintToggle(); schedule(); });
-    bar.append(toggle);
-  }
-  function paintToggle() {
-    if (!toggle) return;
-    toggle.setAttribute('aria-label', playing ? 'Pause the slideshow' : 'Play the slideshow');
-    toggle.title = playing ? 'Pause' : 'Play';
-    toggle.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
-  }
   function schedule() {
     clearTimeout(timer);
     if (!playing || hovering || focused || touching || !onScreen || document.hidden) return;
@@ -146,7 +130,6 @@ function initCarousel() {
   function paint() {
     current = photoAt(index());
     caption.textContent = $('figcaption', slides[current])?.textContent || '';
-    if (counter) counter.textContent = `${current + 1} / ${total}`;
   }
 
   function settle() {
@@ -191,7 +174,6 @@ function initCarousel() {
     }, { threshold: [0, 0.5, 1] }).observe(root);
   }
 
-  paintToggle();
   frameFaces();
   jump(first);
   let raf;

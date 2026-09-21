@@ -389,21 +389,7 @@ a, button, input, select, textarea, summary {
   font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase;
   color: rgba(242,237,227,.82);
 }
-.carousel-count {
-  margin: 0;
-  font-size: .8125rem; font-variant-numeric: tabular-nums;
-  color: rgba(242,237,227,.62);
-}
-.carousel-play {
-  flex: none;
-  width: 36px; height: 36px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: transparent; color: var(--bone);
-  border: 1px solid rgba(242,237,227,.34);
-  border-radius: 1px; cursor: pointer;
-}
-.carousel-play:hover { background: rgba(242,237,227,.08); border-color: var(--brass-mid); }
-.carousel-play svg { width: 13px; height: 13px; }
+
 
 /* ===== Cards & panels ===== */
 .panel {
