@@ -6,6 +6,7 @@
  */
 import { $, $$, esc, sb, busy, money, dateShort, slugify } from '../core.js';
 import { uploadImage } from './upload.js';
+import { ask } from '../dialog.js';
 
 // Words that must not appear in public appeal copy (see the brief).
 const BANNED = /\b(charit(y|ies|able)|tax[-\s]?deductible|gift\s?aid)\b/i;
@@ -69,7 +70,7 @@ export async function init(c, p) {
             <select id="apl-branch"></select>
           </div>
           <div class="check">
-            <input id="apl-active" type="checkbox" checked>
+            <input id="apl-active" type="checkbox">
             <label for="apl-active">Live on the site</label>
           </div>
           <div class="btn-row mt1">
@@ -139,12 +140,28 @@ function paintList() {
           <a class="linkish small" href="appeal.html?slug=${encodeURIComponent(a.slug)}" target="_blank" rel="noopener">View</a>
           <button class="linkish small" type="button" data-dons>Donations</button>
           <button class="linkish small" type="button" data-edit>Edit</button>
+          ${t.donation_count ? '' : '<button class="linkish danger small" type="button" data-del>Delete</button>'}
         </td>
       </tr>`;
   }).join('');
 
   $$('[data-edit]', body).forEach((b) => b.addEventListener('click', () => startEdit(b.closest('tr').dataset.id)));
   $$('[data-dons]', body).forEach((b) => b.addEventListener('click', () => showDonations(b.closest('tr').dataset.id)));
+  // Only offered with no paid donations. The database also refuses an appeal
+  // with pending or refunded ones, so the money records keep their appeal.
+  $$('[data-del]', body).forEach((b) => b.addEventListener('click', async () => {
+    const a = appeals.find((x) => x.id === b.closest('tr').dataset.id);
+    if (!(await ask({
+      title: `Delete “${a.title}”?`,
+      body: 'This removes the appeal for good. To take it off the site but keep it, edit it and untick Live on the site instead.',
+      confirm: 'Delete appeal', danger: true,
+    }))) return;
+    const { error } = await sb.from('appeals').delete().eq('id', a.id);
+    if (error) return ctx.flash(error.message, 'flag');
+    if (editing?.id === a.id) resetForm();
+    ctx.flash(`“${a.title}” deleted.`, 'good');
+    refresh();
+  }));
 }
 
 async function showDonations(id) {
@@ -209,7 +226,8 @@ function resetForm() {
   $('#apl-save', panel).textContent = 'Create appeal';
   $('#apl-cancel', panel).hidden = true;
   $('#apl-branch', panel).value = ctx.branch.id;
-  $('#apl-active', panel).checked = true;
+  // A new appeal starts hidden, so nothing half-written goes public by accident.
+  $('#apl-active', panel).checked = false;
 }
 
 async function save(e) {
@@ -248,7 +266,9 @@ async function save(e) {
       : await sb.from('appeals').insert(row);
     if (error) throw new Error(error.code === '23505' ? 'Another appeal already uses that web address.' : error.message);
     busy(btn, false);
-    ctx.flash(editing ? 'Appeal updated.' : `“${title}” created${row.is_active ? ' and live on the Fundraise page' : ''}.`, 'good');
+    ctx.flash(editing ? 'Appeal updated.'
+      : row.is_active ? `“${title}” created and live on the Fundraise page.`
+      : `“${title}” created and hidden. Tick “Live on the site” when it is ready to go up.`, 'good');
     editing = null;
     await refresh();
   } catch (err) {

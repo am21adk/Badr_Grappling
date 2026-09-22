@@ -5,7 +5,7 @@
  * QR check-ins land in the same table and appear here with a QR label; the
  * coach can untick any entry, whichever route it came in by.
  */
-import { $, $$, esc, sb, busy, clockTime, dayName, dateShort } from '../core.js';
+import { $, $$, esc, sb, busy, clockTime, dayName, dateShort, whoIs } from '../core.js';
 import { ask } from '../dialog.js';
 
 let ctx, panel;
@@ -185,7 +185,9 @@ async function openSession(id) {
   paintState();
 }
 
-function rowHtml(m) {
+// Called by everyone.map(), so the whole list arrives as the third argument
+// and two members with the same name can be told apart.
+function rowHtml(m, _i, all = []) {
   const p = present.get(m.id);
   // Coaches check themselves in with the QR code; the database refuses a
   // coach ticking their own name, so the box is not offered.
@@ -193,7 +195,7 @@ function rowHtml(m) {
   return `
     <div class="roster-row${p ? ' is-in' : ''}" data-name="${esc(m.full_name.toLowerCase())}" data-id="${esc(m.id)}">
       <input type="checkbox" id="rg-${esc(m.id)}" value="${esc(m.id)}"${p ? ' checked' : ''}${self ? ' disabled' : ''}>
-      <label for="rg-${esc(m.id)}">${esc(m.full_name)}${self ? ' <span class="small muted">— you, scan the QR code</span>' : ''}</label>
+      <label for="rg-${esc(m.id)}">${esc(whoIs(m, all))}${self ? ' <span class="small muted">— you, scan the QR code</span>' : ''}</label>
       <span class="src">${p ? sourcePill(p) : ''}</span>
     </div>`;
 }

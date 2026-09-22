@@ -1,7 +1,7 @@
 /* Admin — approve or reject referrals, social tags and home workouts.
  * Points are granted by review_claim() on approval, never on submission.
  */
-import { $, $$, esc, sb, dateShort } from '../core.js';
+import { $, $$, esc, sb, dateShort, whoIs } from '../core.js';
 
 const KIND = { referral: 'Referral', social_tag: 'Social tag', home_workout: 'Home workout' };
 const RULE = { referral: 'referral', social_tag: 'social_tag', home_workout: 'home_workout' };
@@ -50,7 +50,7 @@ export async function refresh() {
       .neq('status', 'pending').in('member_id', ids).order('reviewed_at', { ascending: false }).limit(25),
   ]);
 
-  const name = (id) => members.find((m) => m.id === id)?.full_name || 'Member';
+  const name = (id) => whoIs(members.find((m) => m.id === id), members) || 'Member';
 
   if (pending.error) {
     pendingHost.innerHTML = `<p class="empty">Could not load claims.</p>`;

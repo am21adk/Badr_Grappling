@@ -2,7 +2,7 @@
  * Each win awards the training_win points automatically (database trigger);
  * deleting a win takes them back.
  */
-import { $, $$, esc, sb, busy, dateShort } from '../core.js';
+import { $, $$, esc, sb, busy, dateShort, whoIs } from '../core.js';
 import { ask } from '../dialog.js';
 
 let ctx, panel, members = [];
@@ -52,10 +52,10 @@ export async function init(c, p) {
 
 export async function refresh() {
   members = await ctx.members();
-  const opts = members.map((m) => `<option value="${esc(m.id)}">${esc(m.full_name)}</option>`).join('');
+  const opts = members.map((m) => `<option value="${esc(m.id)}">${esc(whoIs(m, members))}</option>`).join('');
   // Another coach logs your own wins, so you are not offered as the winner.
   const winners = members.filter((m) => m.id !== ctx.me.id)
-    .map((m) => `<option value="${esc(m.id)}">${esc(m.full_name)}</option>`).join('');
+    .map((m) => `<option value="${esc(m.id)}">${esc(whoIs(m, members))}</option>`).join('');
   $('#w-winner', panel).innerHTML = `<option value="">Choose a member</option>${winners}`;
   $('#w-opp', panel).innerHTML = `<option value="">—</option>${opts}`;
 
@@ -75,7 +75,7 @@ async function loadList() {
   if (error) { body.innerHTML = `<tr><td colspan="5" class="muted">Could not load wins.</td></tr>`; return; }
   if (!data.length) { body.innerHTML = `<tr><td colspan="5" class="muted">No wins logged yet.</td></tr>`; return; }
 
-  const name = (id) => id ? (members.find((m) => m.id === id)?.full_name || 'Former member') : '—';
+  const name = (id) => id ? (whoIs(members.find((m) => m.id === id), members) || 'Former member') : '—';
   body.innerHTML = data.map((w) => `
     <tr>
       <td class="nowrap">${esc(dateShort(w.held_on))}</td>
@@ -120,7 +120,7 @@ async function save(e) {
   busy(btn, false);
   if (error) return ctx.flash(error.message, 'flag');
 
-  const who = members.find((m) => m.id === winner)?.full_name;
+  const who = whoIs(members.find((m) => m.id === winner), members);
   ctx.flash(`Win logged for ${who}.`, 'good');
   // Keep the date and clear the people, so a coach can log a run of rounds quickly.
   $('#w-winner', panel).value = '';

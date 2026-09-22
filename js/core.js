@@ -70,6 +70,16 @@ export const dateShort = (d) =>
 
 export const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
 
+/** A member's name as admin lists show it. If anyone else in `all` has the
+ *  same name, their email is added (or their join date, if there is no
+ *  email), so a coach never has to guess which of two people they're picking. */
+export function whoIs(m, all = []) {
+  if (!m) return '';
+  const same = (x) => (x.full_name || '').trim().toLowerCase() === (m.full_name || '').trim().toLowerCase();
+  if (!all.some((x) => x.id !== m.id && same(x))) return m.full_name;
+  return `${m.full_name} (${m.email || `joined ${dateShort(m.joined_on)}`})`;
+}
+
 /** 24h "19:30:00" -> "7.30pm", the way the club writes its timetable. */
 export function clockTime(t) {
   if (!t) return '';
@@ -83,8 +93,17 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 export const dayName = (n) => DAYS[n] ?? '';
 
 /* ---------- status messaging ---------- */
+// A dropped connection reaches the page as "TypeError: Failed to fetch"
+// (Chrome), "NetworkError when attempting to fetch resource." (Firefox) or
+// "Load failed" (Safari). None of that means anything to a coach, and the
+// request may well have landed before the reply was lost, so say so plainly.
+const OFFLINE = /failed to fetch|networkerror|load failed|network request failed/i;
+export const OFFLINE_TEXT = 'Could not reach the club’s database just now. If you were saving '
+  + 'something, refresh the page to check whether it went through before trying again.';
+
 export function say(node, message, kind = '') {
   if (!node) return;
+  if (kind === 'flag' && OFFLINE.test(message || '')) message = OFFLINE_TEXT;
   node.className = 'notice' + (kind ? ` notice-${kind}` : '');
   node.textContent = message || '';
   node.hidden = !message;

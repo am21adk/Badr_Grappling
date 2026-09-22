@@ -2,7 +2,7 @@
  * Every entry records who gave it and why. Corrections are entered as a
  * negative amount rather than by editing history.
  */
-import { $, esc, sb, busy, dateShort, loadRanks, rankFor, rankPlate } from '../core.js';
+import { $, esc, sb, busy, dateShort, loadRanks, rankFor, rankPlate, whoIs } from '../core.js';
 
 let ctx, panel, members = [], rules = [];
 
@@ -80,7 +80,7 @@ export async function refresh() {
   // here would add the points without the record, so they are left out.
   rules = (data || []).filter((r) => !r.is_auto && r.code !== 'training_win');
 
-  const opts = members.map((m) => `<option value="${esc(m.id)}">${esc(m.full_name)}</option>`).join('');
+  const opts = members.map((m) => `<option value="${esc(m.id)}">${esc(whoIs(m, members))}</option>`).join('');
   $('#pt-member', panel).innerHTML = `<option value="">Choose a member</option>${opts}`;
   const keep = $('#pt-filter', panel).value;
   $('#pt-filter', panel).innerHTML = `<option value="">Everyone at ${esc(ctx.branch.name)}</option>${opts}`;
@@ -110,7 +110,7 @@ async function loadHistory() {
     .limit(one ? 500 : 120);
   if (error) { body.innerHTML = `<tr><td colspan="5" class="muted">Could not load points.</td></tr>`; return; }
 
-  const name = (id) => members.find((m) => m.id === id)?.full_name;
+  const name = (id) => whoIs(members.find((m) => m.id === id), members);
   const by = (row) => row.awarded_by ? (name(row.awarded_by) || 'Coach')
     : (row.source_type === 'attendance' || row.source_type === 'week') ? 'Automatic' : '—';
 
@@ -154,7 +154,7 @@ async function save(e) {
   busy(btn, false);
   if (error) return ctx.flash(error.message, 'flag');
 
-  ctx.flash(`${points > 0 ? 'Awarded' : 'Adjusted'} ${points > 0 ? '+' : ''}${points} to ${members.find((m) => m.id === member)?.full_name}.`, 'good');
+  ctx.flash(`${points > 0 ? 'Awarded' : 'Adjusted'} ${points > 0 ? '+' : ''}${points} to ${whoIs(members.find((m) => m.id === member), members)}.`, 'good');
   $('#pt-member', panel).value = '';
   $('#pt-filter', panel).value = member;
   loadHistory();

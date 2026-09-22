@@ -199,6 +199,13 @@ of that file list the three steps. No page or table outside it needs to change.
   button or slide counter, at the club's request. WCAG 2.2.2 asks for a way to
   stop anything that moves by itself, so those holds are standing in for it.
   The delay is `AUTOPLAY_MS` in `js/home.js`.
+- **New posts and appeals start as drafts.** "Publish on the site" and "Live
+  on the site" begin unticked, so nothing half-written goes public by accident.
+- **An appeal with donations can be hidden, never deleted.** Donations point at
+  their appeal, and deleting it would cut the money records loose, or leave a
+  checkout still in progress with nowhere to land. The database refuses it; an
+  appeal with no donations deletes normally. Videos can be deleted outright too,
+  and archiving is still there for keeping one out of sight.
 - **Fundraising copy says "donate".** The club is not a registered charity,
   so the appeal editor refuses titles or descriptions that mention charity,
   charitable giving, Gift Aid or tax relief. Donating is fine.

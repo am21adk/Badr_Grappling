@@ -319,7 +319,8 @@ http.createServer(async (req, res) => {
   if (tm) {
     const table = tm[1];
     if (table === 'appeal_totals') {
-      const rows = db.appeals.map((a) => ({ appeal_id: a.id, slug: a.slug,
+      const admin = ['admin', 'super_admin'].includes(me(req)?.role);
+      const rows = db.appeals.filter((a) => a.is_active !== false || admin).map((a) => ({ appeal_id: a.id, slug: a.slug,
         raised_pence: db.donations.filter((d) => d.appeal_id === a.id && d.status === 'paid').reduce((n, d) => n + d.amount_pence, 0),
         donation_count: db.donations.filter((d) => d.appeal_id === a.id && d.status === 'paid').length }));
       return send(res, 200, rows.filter(filtersFrom(url.searchParams)), { 'Content-Type': 'application/json' });
@@ -351,6 +352,9 @@ http.createServer(async (req, res) => {
       return send(res, 200, hit, { 'Content-Type': 'application/json' });
     }
     if (req.method === 'DELETE') {
+      if (table === 'appeals' && rows.some((r) => match(r) && db.donations.some((d) => d.appeal_id === r.id))) {
+        return send(res, 400, { message: 'This appeal has donations recorded against it, so it cannot be deleted. To take it off the site, edit it and untick Live on the site.' }, { 'Content-Type': 'application/json' });
+      }
       const keep = rows.filter((r) => !match(r)); const gone = rows.length - keep.length;
       db[table] = keep;
       return send(res, 200, [], { 'Content-Type': 'application/json', 'Content-Range': `*/${gone}` });

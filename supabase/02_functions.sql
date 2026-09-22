@@ -828,9 +828,32 @@ with (security_invoker = false) as
          count(d.id) filter (where d.status = 'paid')::bigint as donation_count
     from appeals a
     left join donations d on d.appeal_id = a.id
+   -- Same rule as the appeals themselves: the public sees live appeals only,
+   -- admins see hidden ones too. Without it, a hidden draft's web address
+   -- and totals were readable by anyone.
+   where a.is_active or is_admin()
    group by a.id, a.slug;
 
 grant select on appeal_totals to anon, authenticated;
+
+-- Donations point at their appeal with `on delete set null`, so deleting an
+-- appeal would quietly cut its money records loose, and a checkout still in
+-- progress would land on nothing. An appeal with any donation at all (paid,
+-- pending or refunded) can be hidden, never deleted.
+create or replace function guard_appeal_delete()
+returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if exists (select 1 from donations where appeal_id = old.id) then
+    raise exception 'This appeal has donations recorded against it, so it cannot be deleted. To take it off the site, edit it and untick Live on the site.';
+  end if;
+  return old;
+end $$;
+
+drop trigger if exists appeals_keep_donations on appeals;
+create trigger appeals_keep_donations
+  before delete on appeals
+  for each row execute function guard_appeal_delete();
 
 
 -- =====================================================

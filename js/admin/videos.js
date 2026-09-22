@@ -7,6 +7,7 @@
  */
 import { $, $$, esc, sb, busy, dateShort } from '../core.js';
 import { parseVideoInput, videoThumb, videoLink } from '../video-source.js';
+import { ask } from '../dialog.js';
 
 const DEFAULT_CATEGORIES = ['Technique', 'Session recording', 'Drills', 'Conditioning', 'Competition'];
 
@@ -113,6 +114,7 @@ function paintList() {
       <td class="action-cell">
         <button class="linkish small" type="button" data-edit>Edit</button>
         <button class="linkish small${v.is_archived ? '' : ' danger'}" type="button" data-archive>${v.is_archived ? 'Restore' : 'Archive'}</button>
+        <button class="linkish danger small" type="button" data-del>Delete</button>
       </td>
     </tr>`).join('');
 
@@ -122,6 +124,19 @@ function paintList() {
     const { error } = await sb.from('videos').update({ is_archived: !v.is_archived }).eq('id', v.id);
     if (error) return ctx.flash(error.message, 'flag');
     ctx.flash(v.is_archived ? `“${v.title}” is back in the library.` : `“${v.title}” archived — members no longer see it.`, 'good');
+    refresh();
+  }));
+  $$('[data-del]', body).forEach((b) => b.addEventListener('click', async () => {
+    const v = videos.find((x) => x.id === b.closest('tr').dataset.id);
+    if (!(await ask({
+      title: `Delete “${v.title}”?`,
+      body: 'This removes it from the library for good. Archiving instead hides it from members and keeps it.',
+      confirm: 'Delete video', danger: true,
+    }))) return;
+    const { error } = await sb.from('videos').delete().eq('id', v.id);
+    if (error) return ctx.flash(error.message, 'flag');
+    if (editing?.id === v.id) resetForm();
+    ctx.flash(`“${v.title}” deleted.`, 'good');
     refresh();
   }));
 }

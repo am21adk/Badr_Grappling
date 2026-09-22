@@ -56,7 +56,7 @@ export async function init(c, p) {
             </div>
           </div>
           <div class="check">
-            <input id="up-pub" type="checkbox" checked>
+            <input id="up-pub" type="checkbox">
             <label for="up-pub">Publish on the site</label>
           </div>
           <div class="btn-row mt1">
@@ -154,7 +154,8 @@ function resetForm() {
   $('#up-cancel', panel).hidden = true;
   $('#up-branch', panel).value = ctx.branch.id;
   $('#up-date', panel).value = new Date().toLocaleDateString('en-CA');
-  $('#up-pub', panel).checked = true;
+  // A new post starts as a draft, so nothing half-written goes public by accident.
+  $('#up-pub', panel).checked = false;
   syncButton();
 }
 
@@ -207,7 +208,7 @@ async function save(e) {
     if (error) throw new Error(error.message);
 
     busy(btn, false);
-    ctx.flash(editing ? 'Post updated.' : row.is_published ? `“${title}” is live on the Updates page.` : 'Draft saved.', 'good');
+    ctx.flash(editing ? 'Post updated.' : row.is_published ? `“${title}” is live on the Updates page.` : 'Draft saved. Tick “Publish on the site” when it is ready to go up.', 'good');
     editing = null;
     await refresh();
   } catch (err) {
