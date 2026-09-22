@@ -199,6 +199,16 @@ of that file list the three steps. No page or table outside it needs to change.
   button or slide counter, at the club's request. WCAG 2.2.2 asks for a way to
   stop anything that moves by itself, so those holds are standing in for it.
   The delay is `AUTOPLAY_MS` in `js/home.js`.
+- **Security headers travel in the pages.** GitHub Pages can't send headers,
+  so every page carries its own content security policy and referrer policy
+  in `<meta>` tags, the same as `_headers`. The one thing a `<meta>` tag
+  can't do is stop another site framing the page, so `js/chrome.js` hides any
+  page that finds itself inside a frame from another site. On Cloudflare
+  Pages, `_headers` would do all of this properly.
+- **Typed text has limits, and typed links must be web addresses.** Names,
+  phone numbers, claim details and links have maximum sizes, and the database
+  refuses a claim link or branch map link that isn't `https://`, so no
+  `javascript:` link can be stored even by writing to the database directly.
 - **New posts and appeals start as drafts.** "Publish on the site" and "Live
   on the site" begin unticked, so nothing half-written goes public by accident.
 - **An appeal with donations can be hidden, never deleted.** Donations point at

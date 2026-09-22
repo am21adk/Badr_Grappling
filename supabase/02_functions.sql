@@ -90,9 +90,11 @@ begin
   insert into members (user_id, full_name, email, phone, branch_id, status)
   values (
     new.id,
-    coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), split_part(new.email, '@', 1)),
+    -- Cut to the sizes the members table allows, so an over-long name typed
+    -- at sign-up shortens instead of failing the whole sign-up.
+    left(coalesce(nullif(btrim(new.raw_user_meta_data ->> 'full_name'), ''), split_part(new.email, '@', 1)), 120),
     new.email,
-    nullif(new.raw_user_meta_data ->> 'phone', ''),
+    left(nullif(btrim(new.raw_user_meta_data ->> 'phone'), ''), 40),
     v_branch,
     'active'
   )

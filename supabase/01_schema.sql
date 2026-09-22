@@ -363,3 +363,33 @@ create index if not exists enquiries_status_idx on branch_enquiries(status, crea
 -- skips tables that already exist, so later columns are added here too.
 alter table appeals add column if not exists image_alt text;
 alter table updates add column if not exists image_alt text;
+
+
+-- =====================================================
+-- Limits on what people type
+--
+-- Members write their own name and phone, and their claims. Nothing stopped
+-- a megabyte of text going in. Links people type are held to web addresses,
+-- so a `javascript:` link can never be stored, whatever writes it: the pages
+-- check too, but a branch admin can reach the database without them.
+-- NOT VALID: the rules apply to every new or changed row, without failing
+-- on an older row that happens to break one.
+-- =====================================================
+do $$ begin
+  alter table members add constraint members_text_sizes check (
+    char_length(full_name) between 1 and 120
+    and (phone is null or char_length(phone) <= 40)
+    and (email is null or char_length(email) <= 254)) not valid;
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  alter table member_claims add constraint member_claims_text_sizes check (
+    (detail is null or char_length(detail) <= 2000)
+    and (referred_name is null or char_length(referred_name) <= 120)
+    and (url is null or (char_length(url) <= 500 and url ~* '^https?://'))) not valid;
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  alter table branches add constraint branches_maps_url_web check (
+    maps_url is null or (char_length(maps_url) <= 500 and maps_url ~* '^https://')) not valid;
+exception when duplicate_object then null; end $$;

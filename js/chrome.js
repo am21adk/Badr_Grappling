@@ -4,6 +4,17 @@
  */
 import { $, esc, CLUB, loadBranches, activeBranch, setBranch, currentUser, currentProfile, isAdmin, signOut } from './core.js';
 
+// Clickjacking. GitHub Pages can't send frame-ancestors and a <meta> policy
+// can't carry it, so a page that finds itself inside another site's frame
+// refuses to show. Frames from this same site are left alone: nobody else
+// can put one on this origin, and the preview's own checks use them.
+(function refuseForeignFrames() {
+  if (window.top === window.self) return;
+  let foreign;
+  try { foreign = window.top.location.origin !== window.location.origin; } catch { foreign = true; }
+  if (foreign) document.documentElement.style.setProperty('display', 'none', 'important');
+})();
+
 const PUBLIC_NAV = [
   ['index.html',        'Home'],
   ['branches.html',     'Branches'],

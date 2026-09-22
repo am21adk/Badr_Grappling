@@ -16,7 +16,11 @@ function safeNext() {
   try {
     const u = new URL(raw, location.href);
     if (u.origin !== location.origin) return 'portal.html';
-    return u.pathname.replace(/^\//, '') + u.search + u.hash || 'portal.html';
+    // The full address, now it is known to be this site. The site lives under
+    // /Badr_Grappling/, so a path with its leading slash taken off landed on
+    // /Badr_Grappling/Badr_Grappling/... (a 404) after signing in, which lost a
+    // QR check-in for anyone who scanned while signed out.
+    return u.href;
   } catch {
     return 'portal.html';
   }

@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://i.ytimg.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.youtube-nocookie.com; form-action 'self'; base-uri 'self'; object-src 'none'" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>Join the club — Badr Grappling</title>
     <meta
       name="description"
@@ -105,6 +107,7 @@
                 name="name"
                 type="text"
                 autocomplete="name"
+                maxlength="120"
                 required
               />
             </div>
@@ -115,12 +118,13 @@
                 name="email"
                 type="email"
                 autocomplete="email"
+                maxlength="254"
                 required
               />
             </div>
             <div class="field">
               <label for="j-phone">Phone</label>
-              <input id="j-phone" name="phone" type="tel" autocomplete="tel" />
+              <input id="j-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" />
             </div>
             <div class="field">
               <label for="j-branch">Branch</label>

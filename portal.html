@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://i.ytimg.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.youtube-nocookie.com; form-action 'self'; base-uri 'self'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Member portal — Badr Grappling</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/brand/favicon-32.png" sizes="32x32">
@@ -168,11 +170,11 @@
               </div>
               <div class="field" id="c-ref-wrap">
                 <label for="c-ref">Friend&rsquo;s name</label>
-                <input id="c-ref" type="text" autocomplete="off">
+                <input id="c-ref" type="text" autocomplete="off" maxlength="120">
               </div>
               <div class="field" id="c-url-wrap" hidden>
                 <label for="c-url">Link to the post</label>
-                <input id="c-url" type="url" inputmode="url" placeholder="https://www.instagram.com/p/…">
+                <input id="c-url" type="url" inputmode="url" maxlength="500" placeholder="https://www.instagram.com/p/…">
               </div>
               <div class="field">
                 <label for="c-detail">Details</label>

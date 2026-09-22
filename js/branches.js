@@ -11,7 +11,11 @@ function paintDetail(branch) {
   if (!host) return;
 
   const addr = [branch.address, branch.postcode].filter(Boolean).join(', ');
-  const maps = branch.maps_url
+  // Settings only saves https:// links, but a branch admin can write to the
+  // database directly. A saved link is used only if it is a web address, so a
+  // `javascript:` one can never become a link a visitor clicks.
+  const saved = /^https:\/\//i.test(branch.maps_url || '') ? branch.maps_url : null;
+  const maps = saved
     || (addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}` : null);
 
   host.innerHTML = `
