@@ -104,8 +104,10 @@ async function announce(rank, level) {
   if (!seen) return;
   const at = (code) => standing.ranks.findIndex((x) => x.code === code);
   const notices = [];
-  if (at(seen.rank) >= 0 && at(rank.code) > at(seen.rank)) {
-    notices.push({ type: 'rank', from: standing.ranks[at(seen.rank)], to: rank });
+  // One notice for each rank climbed, in order: E to C shows E to D, then D to C.
+  const was = at(seen.rank), now = at(rank.code);
+  if (was >= 0) {
+    for (let i = was + 1; i <= now; i += 1) notices.push({ type: 'rank', from: standing.ranks[i - 1], to: standing.ranks[i] });
   }
   if (Number.isFinite(seen.level) && level > seen.level) notices.push({ type: 'level', from: seen.level, to: level });
   if (notices.length) await celebrate(notices);

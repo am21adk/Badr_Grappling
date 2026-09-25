@@ -2,16 +2,18 @@
  *
  * A native <dialog> in the manner of a game's system window, in the club's
  * own ink and brass: the frame opens from its middle, a line of light runs
- * down it once, and the level counts up to its new number, one step for each
- * level gained. Anyone whose device asks for less motion gets the same notice,
- * still.
+ * down it once, and the old level ticks over to the new one. Anyone whose
+ * device asks for less motion gets the same notice, still.
+ *
+ * Every level gets a notice of its own. A jump from 4 to 7 shows "Level 5";
+ * closing it brings "Level 6", then "Level 7", back to back. Rank-ups arrive
+ * the same way, one rank at a time (portal.js hands them over already split,
+ * since only it knows the ladder).
  *
  *   await celebrate([
  *     { type: 'rank',  from: { code: 'E', label: 'Rank E' }, to: { code: 'D', label: 'Rank D' } },
  *     { type: 'level', from: 4, to: 7 },
  *   ]);
- *
- * Each notice waits for the one before it to be closed.
  */
 import { rankPlate } from './core.js';
 
@@ -19,7 +21,15 @@ const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let seq = 0;
 
 export async function celebrate(notices = []) {
-  for (const n of notices) await show(n);
+  for (const n of oneLevelAtATime(notices)) await show(n);
+}
+
+// 4 -> 7 becomes 4 -> 5, 5 -> 6, 6 -> 7: one notice for each level reached.
+function oneLevelAtATime(notices) {
+  return notices.flatMap((n) => {
+    if (n.type !== 'level' || !(n.to - n.from > 1)) return [n];
+    return Array.from({ length: n.to - n.from }, (_, i) => ({ type: 'level', from: n.from + i, to: n.from + i + 1 }));
+  });
 }
 
 function show(n) {
@@ -34,7 +44,6 @@ function show(n) {
     // Numbers and rank codes only; the sentence below goes in as text.
     dlg.innerHTML = `
       <form method="dialog" class="sysnote-frame">
-        <p class="sysnote-eyebrow">Notice</p>
         <h2 class="sysnote-title" id="${id}-t">${isLevel ? 'Level up' : 'Rank up'}</h2>
         ${isLevel
           ? `<p class="sysnote-level"><span class="sysnote-lv">Level</span> <span class="sysnote-num">${Number(n.from) || 0}</span></p>`
@@ -43,9 +52,8 @@ function show(n) {
         <button class="btn" value="ok">Continue</button>
       </form>`;
 
-    const gained = isLevel ? n.to - n.from : 0;
     dlg.querySelector('.sysnote-line').textContent = isLevel
-      ? `You have reached Level ${n.to}.${gained > 1 ? ` That is ${gained} levels at once.` : ''}`
+      ? `You have reached Level ${n.to}.`
       : `You are now ${n.to.label}.`;
 
     // Same ways out as the site's other dialogs: the button, Escape, or a
@@ -58,7 +66,7 @@ function show(n) {
     let timer = null;
     const opener = document.activeElement;
     dlg.addEventListener('close', () => {
-      clearInterval(timer);
+      clearTimeout(timer);
       dlg.remove();
       if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus();
       resolve();
@@ -70,20 +78,12 @@ function show(n) {
 
     if (!isLevel) return;
     const num = dlg.querySelector('.sysnote-num');
-    if (still() || gained < 1) { num.textContent = n.to; return; }
-    // Count up one level at a time. A big jump still finishes in about a
-    // second and a half.
-    let at = n.from;
-    const step = Math.max(60, Math.min(320, Math.round(1500 / gained)));
-    setTimeout(() => {
-      timer = setInterval(() => {
-        at += 1;
-        num.textContent = at;
-        num.classList.remove('tick');
-        void num.offsetWidth;                    // restart the tick for each number
-        num.classList.add('tick');
-        if (at >= n.to) clearInterval(timer);
-      }, step);
-    }, 450);                                     // after the frame has opened
+    if (still() || n.to <= n.from) { num.textContent = n.to; return; }
+    // The old level first, then it ticks over to the new one once the frame
+    // has opened.
+    timer = setTimeout(() => {
+      num.textContent = n.to;
+      num.classList.add('tick');
+    }, 450);
   });
 }
