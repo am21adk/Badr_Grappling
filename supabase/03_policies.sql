@@ -27,6 +27,8 @@ alter table appeals          enable row level security;
 alter table donations        enable row level security;
 alter table updates          enable row level security;
 alter table branch_enquiries enable row level security;
+alter table training_logs    enable row level security;
+alter table levelling_settings enable row level security;
 -- Internal only: RLS on and no policies, so no API role can read or write it.
 alter table week_settlements enable row level security;
 
@@ -40,7 +42,8 @@ begin
        and tablename in ('branches','members','class_times','sessions','attendance',
                          'qr_tokens','ranks','point_rules','points_ledger',
                          'training_results','member_claims','videos','appeals',
-                         'donations','updates','branch_enquiries')
+                         'donations','updates','branch_enquiries',
+                         'training_logs','levelling_settings')
   loop
     execute format('drop policy %I on %I.%I', r.policyname, r.schemaname, r.tablename);
   end loop;
@@ -285,6 +288,33 @@ create policy enquiries_admin_update on branch_enquiries
   for update using (is_super_admin()) with check (is_super_admin());
 
 
+-- ---------- levelling ----------
+-- A member sees and can delete their own training entries (their EXP goes
+-- with a deleted one). Nobody writes them directly: log_training() does,
+-- so the EXP and the daily cap are the database's doing, not the page's.
+-- Coaches can read and remove entries for their own branch's members.
+create policy training_logs_read_own on training_logs
+  for select using (member_id = current_member_id());
+
+create policy training_logs_delete_own on training_logs
+  for delete using (member_id = current_member_id());
+
+create policy training_logs_admin_read on training_logs
+  for select using (
+    exists (select 1 from members m where m.id = member_id and can_manage_branch(m.branch_id))
+  );
+
+create policy training_logs_admin_delete on training_logs
+  for delete using (
+    exists (select 1 from members m where m.id = member_id and can_manage_branch(m.branch_id))
+  );
+
+-- The rates and caps are shown on the training form, so anyone may read
+-- them. They are changed only by running levelling_config.sql.
+create policy levelling_settings_read on levelling_settings
+  for select using (true);
+
+
 -- ---------- execute grants ----------
 -- Supabase grants EXECUTE on every new function in `public` to anon and
 -- authenticated. Left alone, that would let anyone call internal helpers
@@ -316,6 +346,8 @@ grant execute on function my_summary()                        to authenticated;
 grant execute on function my_points_history(int)              to authenticated;
 grant execute on function my_attendance(int)                  to authenticated;
 grant execute on function my_training_record(int)            to authenticated;
+grant execute on function my_level()                          to authenticated;
+grant execute on function log_training(date, training_kind, int, numeric, text, int, text) to authenticated;
 
 -- Everything else — award_rule_points, check_week_bonus, member_streak,
 -- rotate_all_qr_tokens, the trigger functions — runs only from inside

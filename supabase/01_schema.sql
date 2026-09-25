@@ -393,3 +393,64 @@ do $$ begin
   alter table branches add constraint branches_maps_url_web check (
     maps_url is null or (char_length(maps_url) <= 500 and maps_url ~* '^https://')) not valid;
 exception when duplicate_object then null; end $$;
+
+
+-- =====================================================
+-- Levelling: EXP and levels, alongside ranks and never instead of them
+--
+-- Ranks come from points, which only coaches and the system give out.
+-- Levels come from EXP. Every point a member is given counts as the same
+-- amount of EXP, and members earn more by logging their own training.
+--
+-- A member's EXP is not kept as one running number that could drift. It is
+-- the sum of the points ledger and what each training entry earned, so
+-- taking points back takes their EXP back too. The level is worked out from
+-- that total whenever it is read (level_for_exp), which is why retuning the
+-- curve never touches anyone's stored data.
+-- =====================================================
+do $$ begin
+  create type training_kind as enum ('running', 'calisthenics', 'wrestling', 'strength', 'general');
+exception when duplicate_object then null; end $$;
+
+-- Every number that shapes levelling, in one row. The values are set in
+-- supabase/levelling_config.sql, the one file to edit.
+create table if not exists levelling_settings (
+  id               boolean primary key default true check (id),   -- only ever one row
+  exp_per_minute   numeric not null check (exp_per_minute >= 0),
+  exp_per_mile     numeric not null check (exp_per_mile >= 0),
+  reps_per_exp     numeric not null check (reps_per_exp > 0),
+  cap_running      int not null check (cap_running >= 0),
+  cap_calisthenics int not null check (cap_calisthenics >= 0),
+  cap_wrestling    int not null check (cap_wrestling >= 0),
+  cap_strength     int not null check (cap_strength >= 0),
+  cap_general      int not null check (cap_general >= 0),
+  max_logs_per_day int not null check (max_logs_per_day > 0),
+  backdate_days    int not null check (backdate_days >= 0),
+  curve_base       numeric not null check (curve_base > 0),
+  curve_power      numeric not null check (curve_power > 0)
+);
+
+-- Training members log themselves. `exp` is what the entry earned after the
+-- daily cap, worked out by log_training() in the database, never by the page.
+create table if not exists training_logs (
+  id             uuid primary key default gen_random_uuid(),
+  member_id      uuid not null references members(id) on delete cascade,
+  trained_on     date not null,
+  kind           training_kind not null,
+  minutes        int,
+  miles          numeric(5,2),
+  exercise       text,
+  reps           int,
+  notes          text,
+  exp            int not null default 0,
+  exp_before_cap int not null default 0,     -- what it would have earned with no cap
+  created_at     timestamptz not null default now(),
+  constraint training_logs_sizes check (
+    (minutes is null or minutes between 1 and 600)
+    and (miles is null or (miles > 0 and miles <= 100))
+    and (reps is null or reps between 1 and 10000)
+    and (exercise is null or char_length(exercise) between 1 and 80)
+    and (notes is null or char_length(notes) <= 500)
+    and exp >= 0 and exp_before_cap >= 0)
+);
+create index if not exists training_logs_member_idx on training_logs(member_id, trained_on desc);

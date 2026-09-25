@@ -20,6 +20,17 @@
   .stats > div { background: var(--ink); padding: 1.1rem 1rem; }
   .stats .stat-num { font-size: clamp(1.6rem, 4vw, 2.2rem); color: var(--bone); }
   .stats .meta { color: rgba(242,237,227,.62); }
+  /* Rank and Level, side by side: two separate ladders. */
+  .tracks { display: grid; gap: 1.75rem 2.5rem; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 560px) { .tracks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .level-plate {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    min-width: 3.5rem; height: 3.5rem; padding: 0 .45rem;
+    font-family: var(--serif); font-weight: 700; font-size: 1.6rem; font-variant-numeric: tabular-nums;
+    color: var(--brass-lite); border: 1px solid var(--brass-mid); border-radius: 1px;
+  }
+  .row-2 { display: grid; gap: 0 1rem; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 520px) { .row-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 
   .vid-card { background: var(--white); border: 1px solid var(--line); }
   .vid-body { padding: 1rem 1.1rem 1.25rem; }
@@ -53,17 +64,35 @@
         <div>
           <p class="eyebrow" id="p-branch">Member</p>
           <h1 class="h1" id="p-hello">Welcome back</h1>
-          <div class="standing-rank mt2">
-            <span id="p-rank-plate"></span>
-            <div style="flex:1;min-width:0">
-              <p class="meta" style="color:rgba(242,237,227,.62)" id="p-rank-label">Rank</p>
-              <p class="stat-num" style="color:var(--bone)"><span id="p-points">0</span> <span class="small" style="color:rgba(242,237,227,.62)">points</span></p>
+          <div class="tracks mt2">
+            <div>
+              <div class="standing-rank">
+                <span id="p-rank-plate"></span>
+                <div style="flex:1;min-width:0">
+                  <p class="meta" style="color:rgba(242,237,227,.62)" id="p-rank-label">Rank</p>
+                  <p class="stat-num" style="color:var(--bone)"><span id="p-points">0</span> <span class="small" style="color:rgba(242,237,227,.62)">points</span></p>
+                </div>
+              </div>
+              <div class="mt2">
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                     id="p-progress" aria-label="Progress to next rank"><i style="width:0%"></i></div>
+                <p class="small mt1" style="color:rgba(242,237,227,.72)" id="p-next">&nbsp;</p>
+              </div>
             </div>
-          </div>
-          <div class="mt2" style="max-width:34rem">
-            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
-                 id="p-progress" aria-label="Progress to next rank"><i style="width:0%"></i></div>
-            <p class="small mt1" style="color:rgba(242,237,227,.72)" id="p-next">&nbsp;</p>
+            <div>
+              <div class="standing-rank">
+                <span class="level-plate" id="p-level-plate" aria-hidden="true">0</span>
+                <div style="flex:1;min-width:0">
+                  <p class="meta" style="color:rgba(242,237,227,.62)" id="p-level-label">Level</p>
+                  <p class="stat-num" style="color:var(--bone)"><span id="p-exp-total">0</span> <span class="small" style="color:rgba(242,237,227,.62)">total EXP</span></p>
+                </div>
+              </div>
+              <div class="mt2">
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                     id="p-exp-progress" aria-label="EXP to the next level"><i style="width:0%"></i></div>
+                <p class="small mt1" style="color:rgba(242,237,227,.72)" id="p-exp-next">&nbsp;</p>
+              </div>
+            </div>
           </div>
         </div>
         <div class="stats" aria-label="Your numbers">
@@ -81,6 +110,7 @@
     <div class="wrap">
       <div class="admin-tabs" role="tablist" aria-label="Portal sections">
         <button role="tab" id="tab-library" aria-controls="panel-library" aria-selected="true">Sessions &amp; tutorials</button>
+        <button role="tab" id="tab-training" aria-controls="panel-training" aria-selected="false" tabindex="-1">Training log</button>
         <button role="tab" id="tab-record"  aria-controls="panel-record"  aria-selected="false" tabindex="-1">My record</button>
         <button role="tab" id="tab-points"  aria-controls="panel-points"  aria-selected="false" tabindex="-1">Points history</button>
         <button role="tab" id="tab-claim"   aria-controls="panel-claim"   aria-selected="false" tabindex="-1">Claim points</button>
@@ -106,6 +136,77 @@
       </div>
 
       <!-- Record -->
+      <!-- Training log -->
+      <div class="tabpanel" role="tabpanel" id="panel-training" aria-labelledby="tab-training" hidden>
+        <div class="grid g2" style="align-items:start">
+          <div>
+            <p class="small muted mb2" id="t-rates">Log your own training. Every entry earns EXP straight away.</p>
+            <div class="notice" id="t-msg" hidden></div>
+            <form method="post" id="training-form" novalidate>
+              <div class="row-2">
+                <div class="field">
+                  <label for="t-date">Date</label>
+                  <input id="t-date" type="date" required>
+                </div>
+                <div class="field">
+                  <label for="t-kind">Training</label>
+                  <select id="t-kind" required>
+                    <option value="running">Running</option>
+                    <option value="calisthenics">Calisthenics</option>
+                    <option value="wrestling">Wrestling / mat work</option>
+                    <option value="strength">Strength</option>
+                    <option value="general">General training</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row-2" data-for="running">
+                <div class="field">
+                  <label for="t-miles">Distance <span class="muted">(miles)</span></label>
+                  <input id="t-miles" type="number" inputmode="decimal" min="0.01" max="100" step="0.01">
+                </div>
+                <div class="field">
+                  <label for="t-run-min">Time <span class="muted">(minutes)</span></label>
+                  <input id="t-run-min" type="number" inputmode="numeric" min="1" max="600" step="1">
+                </div>
+              </div>
+              <p class="hint mb1" data-for="running">Give the distance, the time, or both.</p>
+              <div class="row-2" data-for="calisthenics strength" hidden>
+                <div class="field">
+                  <label for="t-exercise">Exercise</label>
+                  <input id="t-exercise" type="text" maxlength="80" autocomplete="off" placeholder="Press-ups">
+                </div>
+                <div class="field">
+                  <label for="t-reps">Total reps</label>
+                  <input id="t-reps" type="number" inputmode="numeric" min="1" max="10000" step="1">
+                </div>
+              </div>
+              <div class="field" data-for="wrestling general" hidden>
+                <label for="t-minutes">Duration <span class="muted">(minutes)</span></label>
+                <input id="t-minutes" type="number" inputmode="numeric" min="1" max="600" step="1">
+              </div>
+              <div class="field">
+                <label for="t-notes">Notes <span class="muted">(optional)</span></label>
+                <textarea id="t-notes" maxlength="500" style="min-height:4.5rem"></textarea>
+              </div>
+              <p class="hint mb1" id="t-cap">&nbsp;</p>
+              <button class="btn" type="submit" id="t-submit">Log training</button>
+            </form>
+          </div>
+          <div>
+            <div class="between mb1">
+              <h2 class="h3">Your training</h2>
+              <p class="small muted" id="t-total"></p>
+            </div>
+            <div class="table-scroll">
+              <table class="table">
+                <thead><tr><th scope="col">Date</th><th scope="col">Training</th><th scope="col" class="num">EXP</th><th scope="col"><span class="sr">Actions</span></th></tr></thead>
+                <tbody id="t-list"><tr><td colspan="4" class="load">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="tabpanel" role="tabpanel" id="panel-record" aria-labelledby="tab-record" hidden>
         <div class="grid g2" style="align-items:start">
           <div>

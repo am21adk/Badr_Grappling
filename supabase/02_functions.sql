@@ -939,3 +939,186 @@ language sql stable security definer set search_path = public, pg_temp as $$
 $$;
 
 -- Execute grants for all of the above live in 03_policies.sql.
+
+
+-- =====================================================
+-- Levelling
+-- =====================================================
+
+-- The level curve, and the only place its shape lives. Its numbers are in
+-- levelling_settings (set by levelling_config.sql).
+--   EXP needed to reach level n = round(curve_base × n ^ curve_power)
+-- Everyone starts at level 0. With the curve as set, level 1 is 50 EXP and
+-- each level after needs more than the one before: 50, 91, 119, 140, 159...
+create or replace function exp_for_level(p_level int)
+returns bigint
+language sql stable set search_path = public, pg_temp as $$
+  select case when p_level <= 0 then 0
+              else round(s.curve_base * power(p_level::numeric, s.curve_power))::bigint end
+    from levelling_settings s;
+$$;
+
+-- The level a total of EXP is worth. No top level: it keeps counting.
+create or replace function level_for_exp(p_exp bigint)
+returns int
+language plpgsql stable set search_path = public, pg_temp as $$
+declare
+  v_exp bigint := greatest(coalesce(p_exp, 0), 0);
+  s     levelling_settings%rowtype;
+  n     int;
+begin
+  select * into s from levelling_settings;
+  -- Start from the curve run backwards, then step to the exact level, since
+  -- rounding can leave the estimate one either side.
+  n := greatest(0, floor(power(v_exp::numeric / s.curve_base, 1 / s.curve_power))::int);
+  while exp_for_level(n + 1) <= v_exp loop n := n + 1; end loop;
+  while n > 0 and exp_for_level(n) > v_exp loop n := n - 1; end loop;
+  return n;
+end $$;
+
+-- A member's EXP: every point they have been given, plus what their
+-- training log earned. Internal: it takes any member's id.
+create or replace function member_exp(p_member uuid)
+returns bigint
+language sql stable security definer set search_path = public, pg_temp as $$
+  select greatest(
+    coalesce((select sum(points) from points_ledger where member_id = p_member), 0)
+    + coalesce((select sum(exp) from training_logs where member_id = p_member), 0),
+    0)::bigint;
+$$;
+
+create or replace function my_level()
+returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare
+  v_me       uuid := current_member_id();
+  v_points   bigint;
+  v_training bigint;
+  v_total    bigint;
+  v_level    int;
+begin
+  if v_me is null then return null; end if;
+  select coalesce(sum(points), 0) into v_points   from points_ledger where member_id = v_me;
+  select coalesce(sum(exp), 0)    into v_training from training_logs where member_id = v_me;
+  v_total := greatest(v_points + v_training, 0);
+  v_level := level_for_exp(v_total);
+  return jsonb_build_object(
+    'total_exp',         v_total,
+    'exp_from_points',   v_points,
+    'exp_from_training', v_training,
+    'level',             v_level,
+    'level_starts_at',   exp_for_level(v_level),
+    'next_level_at',     exp_for_level(v_level + 1)
+  );
+end $$;
+
+-- Logging training. The page sends what was done; this works out the EXP,
+-- since a member could edit anything the page sends, and applies the daily
+-- cap for that kind of training.
+create or replace function log_training(
+  p_date     date,
+  p_kind     training_kind,
+  p_minutes  int     default null,
+  p_miles    numeric default null,
+  p_exercise text    default null,
+  p_reps     int     default null,
+  p_notes    text    default null
+)
+returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_me     uuid := current_member_id();
+  s        levelling_settings%rowtype;
+  v_raw    int;
+  v_cap    int;
+  v_used   int;
+  v_exp    int;
+  v_count  int;
+  v_before bigint;
+  v_id     uuid;
+begin
+  if v_me is null or not is_active_member() then
+    raise exception 'Only active members can log training.';
+  end if;
+  select * into s from levelling_settings;
+
+  if p_date is null or p_date > club_today() then
+    raise exception 'Pick the day you trained: today or an earlier day.';
+  end if;
+  if p_date < club_today() - s.backdate_days then
+    raise exception 'Training can be logged up to % days back.', s.backdate_days;
+  end if;
+
+  p_exercise := nullif(btrim(p_exercise), '');
+  p_notes    := nullif(btrim(p_notes), '');
+  p_miles    := round(p_miles, 2);
+  if p_minutes is not null and (p_minutes < 1 or p_minutes > 600) then
+    raise exception 'Minutes should be between 1 and 600.';
+  end if;
+  if p_miles is not null and (p_miles <= 0 or p_miles > 100) then
+    raise exception 'Miles should be more than 0 and no more than 100.';
+  end if;
+  if p_reps is not null and (p_reps < 1 or p_reps > 10000) then
+    raise exception 'Reps should be between 1 and 10,000.';
+  end if;
+  if char_length(p_exercise) > 80 then raise exception 'Keep the exercise name to 80 characters.'; end if;
+  if char_length(p_notes) > 500 then raise exception 'Keep notes to 500 characters.'; end if;
+
+  -- What each kind of training is measured in, and nothing it isn't.
+  case p_kind
+    when 'running' then
+      if p_minutes is null and p_miles is null then
+        raise exception 'For a run, give the distance, the time, or both.';
+      end if;
+      p_exercise := null; p_reps := null;
+      v_raw := floor(coalesce(p_minutes, 0) * s.exp_per_minute + coalesce(p_miles, 0) * s.exp_per_mile);
+    when 'calisthenics', 'strength' then
+      if p_exercise is null or p_reps is null then
+        raise exception 'Give the exercise and the total reps.';
+      end if;
+      p_minutes := null; p_miles := null;
+      v_raw := floor(p_reps / s.reps_per_exp);
+    else  -- wrestling, general
+      if p_minutes is null then
+        raise exception 'Give how many minutes you trained.';
+      end if;
+      p_miles := null; p_exercise := null; p_reps := null;
+      v_raw := floor(p_minutes * s.exp_per_minute);
+  end case;
+
+  -- One log at a time per member, so two quick taps can't both slip under
+  -- the cap.
+  perform pg_advisory_xact_lock(hashtext('training_log:' || v_me::text));
+
+  select count(*) into v_count from training_logs where member_id = v_me and trained_on = p_date;
+  if v_count >= s.max_logs_per_day then
+    raise exception 'One day can hold % entries, and that day is full.', s.max_logs_per_day;
+  end if;
+
+  v_cap := case p_kind
+             when 'running'      then s.cap_running
+             when 'calisthenics' then s.cap_calisthenics
+             when 'wrestling'    then s.cap_wrestling
+             when 'strength'     then s.cap_strength
+             else                     s.cap_general
+           end;
+  select coalesce(sum(exp), 0) into v_used
+    from training_logs where member_id = v_me and trained_on = p_date and kind = p_kind;
+  v_exp := greatest(0, least(v_raw, v_cap - v_used));
+
+  v_before := member_exp(v_me);
+  insert into training_logs (member_id, trained_on, kind, minutes, miles, exercise, reps, notes, exp, exp_before_cap)
+  values (v_me, p_date, p_kind, p_minutes, p_miles, p_exercise, p_reps, p_notes, v_exp, v_raw)
+  returning id into v_id;
+
+  return jsonb_build_object(
+    'id',             v_id,
+    'exp',            v_exp,
+    'exp_before_cap', v_raw,
+    'capped',         v_exp < v_raw,
+    'daily_cap',      v_cap,
+    'level_before',   level_for_exp(v_before),
+    'level_after',    level_for_exp(v_before + v_exp),
+    'total_exp',      v_before + v_exp
+  );
+end $$;

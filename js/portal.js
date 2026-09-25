@@ -5,6 +5,8 @@ import {
   dateShort,
 } from './core.js';
 import { renderVideo, videoThumb } from './video-source.js';
+import { celebrate } from './levelup.js';
+import { initTraining, loadTraining } from './training-log.js';
 
 const me = await requireMember();
 if (me) boot();
@@ -23,6 +25,7 @@ async function boot() {
 
   initTabs($('.admin-tabs'), {
     onShow: (key) => {
+      if (key === 'training') loadTraining();
       if (key === 'record') loadRecord();
       if (key === 'points') loadPoints();
       if (key === 'claim')  loadClaims();
@@ -32,13 +35,19 @@ async function boot() {
   loadStanding();
   initLibrary();
   initClaimForm();
+  initTraining(me, levelChanged);
 }
 
 /* =====================================================
-   Standing: rank, points, progress, streak
+   Standing: rank and level, side by side
+   Two separate ladders. Rank comes from points, which only coaches and the
+   system give. Level comes from EXP: every point counts as the same EXP, plus
+   whatever the member's training log earns. The database works out both.
    ===================================================== */
+let standing = { rank: null, ranks: [] };
+
 async function loadStanding() {
-  const [{ data: s, error }, ranks] = await Promise.all([sb.rpc('my_summary'), loadRanks()]);
+  const [{ data: s, error }, ranks, { data: lv }] = await Promise.all([sb.rpc('my_summary'), loadRanks(), sb.rpc('my_level')]);
   if (error || !s) {
     $('#p-next').textContent = 'Your numbers could not be loaded just now.';
     return;
@@ -60,6 +69,58 @@ async function loadStanding() {
   $('#s-record').textContent = `${s.wins}–${s.losses}`;
   $('#s-month').textContent = s.points_month;
   $('#s-streak').textContent = s.streak_weeks;
+
+  standing = { rank: r.current, ranks: [...ranks].sort((a, b) => a.min_points - b.min_points) };
+  if (!lv) { $('#p-exp-next').textContent = 'Your level could not be loaded just now.'; return; }
+  paintLevel(lv);
+  announce(r.current, lv.level);
+}
+
+function paintLevel(lv) {
+  const into = Math.max(0, lv.total_exp - lv.level_starts_at);
+  const span = lv.next_level_at - lv.level_starts_at;
+  const pct = span > 0 ? Math.min(100, Math.floor((into / span) * 100)) : 100;
+  $('#p-level-plate').textContent = lv.level;
+  $('#p-level-label').textContent = `Level ${lv.level}`;
+  $('#p-exp-total').textContent = Number(lv.total_exp).toLocaleString('en-GB');
+  const bar = $('#p-exp-progress');
+  bar.setAttribute('aria-valuenow', String(pct));
+  bar.querySelector('i').style.width = `${pct}%`;
+  $('#p-exp-next').textContent = `${into.toLocaleString('en-GB')} / ${span.toLocaleString('en-GB')} EXP to Level ${lv.level + 1}`;
+  $('#t-total').textContent = `Training has earned you ${Number(lv.exp_from_training).toLocaleString('en-GB')} EXP`;
+}
+
+// What this device last showed, so a level or rank gained while the member
+// was away (a coach ticking the register, an approved claim) is celebrated
+// the next time they open the portal, once. The first visit on a device only
+// remembers: there is nothing yet to compare with.
+const seenKey = () => `badr.seen.${me.id}`;
+function readSeen() { try { return JSON.parse(localStorage.getItem(seenKey()) || 'null'); } catch { return null; } }
+function writeSeen(v) { try { localStorage.setItem(seenKey(), JSON.stringify(v)); } catch { /* private browsing: no memory, no harm */ } }
+
+async function announce(rank, level) {
+  const seen = readSeen();
+  writeSeen({ rank: rank.code, level });
+  if (!seen) return;
+  const at = (code) => standing.ranks.findIndex((x) => x.code === code);
+  const notices = [];
+  if (at(seen.rank) >= 0 && at(rank.code) > at(seen.rank)) {
+    notices.push({ type: 'rank', from: standing.ranks[at(seen.rank)], to: rank });
+  }
+  if (Number.isFinite(seen.level) && level > seen.level) notices.push({ type: 'level', from: seen.level, to: level });
+  if (notices.length) await celebrate(notices);
+}
+
+// After an entry is logged or deleted: repaint the level, and celebrate if
+// the entry just logged took the member up, however many levels.
+async function levelChanged(result) {
+  const { data: lv } = await sb.rpc('my_level');
+  if (!lv) return;
+  paintLevel(lv);
+  if (standing.rank) writeSeen({ rank: standing.rank.code, level: lv.level });
+  if (result && result.level_after > result.level_before) {
+    await celebrate([{ type: 'level', from: result.level_before, to: result.level_after }]);
+  }
 }
 
 /* =====================================================

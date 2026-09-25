@@ -154,6 +154,15 @@ under the photo, so no text covers a face.
 `storage` source type there (private bucket, signed URLs). The notes at the top
 of that file list the three steps. No page or table outside it needs to change.
 
+### Change EXP rates, daily caps or the level curve
+
+Every levelling number is in `supabase/levelling_config.sql`: EXP per minute,
+per mile and per rep, each training type's daily cap, how many entries a day
+holds, how far back training can be logged, and the curve's two numbers. Edit
+it and run it in the Supabase SQL editor. Levels are worked out from EXP when
+they're read, so a new curve simply moves everyone to their new level; nobody's
+EXP changes. The curve's shape is `exp_for_level()` in `02_functions.sql`.
+
 ## Decisions worth knowing about
 
 - **Manchester is seeded but hidden.** There was no address, timetable or
@@ -209,6 +218,23 @@ of that file list the three steps. No page or table outside it needs to change.
   phone numbers, claim details and links have maximum sizes, and the database
   refuses a claim link or branch map link that isn't `https://`, so no
   `javascript:` link can be stored even by writing to the database directly.
+- **Levels run alongside ranks, never instead of them.** A rank comes from
+  points, which only coaches and the system give. A level comes from EXP:
+  every point counts as the same EXP, and members earn more by logging their
+  own training. So the training log can't touch anyone's rank.
+- **EXP is worked out by the database, never the page.** `log_training()`
+  takes what was done, works out the EXP, and applies that day's cap for the
+  type of training. Nobody can write a training entry directly, so no edited
+  request can award extra EXP. Members can delete their own entries, and the
+  EXP goes with them.
+- **EXP is the sum of what was earned, not a running total.** It's the points
+  ledger plus each training entry's EXP, so taking points back takes their EXP
+  too, and nothing can drift out of step. Levels start at 0: with the curve as
+  set, level 1 is 50 EXP, which keeps "each level needs more than the last"
+  true from the first step.
+- **Level-ups are celebrated once per device.** The portal remembers the last
+  level and rank it showed, so a level or rank gained while a member was away
+  (a coach ticking the register) gets its notice the next time they open it.
 - **New posts and appeals start as drafts.** "Publish on the site" and "Live
   on the site" begin unticked, so nothing half-written goes public by accident.
 - **An appeal with donations can be hidden, never deleted.** Donations point at

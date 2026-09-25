@@ -97,6 +97,16 @@ const db = {
     { id: uuid(), name: 'Ahmed Hasan', email: 'ahmed@example.com', phone: '07700 900321', city: 'Birmingham', grappling_background: 'Six years of freestyle wrestling, two of BJJ.', coaching_experience: 'Assistant coach at a university club for two years.', facility_access: 'Community hall at our mosque, available Tuesday and Thursday evenings. No mats yet.', why: 'There are a lot of young men here with nowhere like this to go.', status: 'new', admin_note: null, created_at: iso(Date.now() - 864e5) },
   ],
   qr_tokens: [],
+  // Mirrors supabase/levelling_config.sql, for the preview only.
+  levelling_settings: [{ id: true, exp_per_minute: 1, exp_per_mile: 10, reps_per_exp: 5,
+    cap_running: 150, cap_calisthenics: 100, cap_wrestling: 180, cap_strength: 100, cap_general: 120,
+    max_logs_per_day: 10, backdate_days: 7, curve_base: 50, curve_power: 1.5 }],
+  training_logs: [
+    { id: uuid(), member_id: mid('m1'), trained_on: day(-3), kind: 'running', minutes: 35, miles: 4, exercise: null, reps: null,
+      notes: 'Canal loop', exp: 75, exp_before_cap: 75, created_at: iso(Date.now() - 3 * 864e5) },
+    { id: uuid(), member_id: mid('m1'), trained_on: day(-1), kind: 'calisthenics', minutes: null, miles: null, exercise: 'Press-ups', reps: 150,
+      notes: null, exp: 30, exp_before_cap: 30, created_at: iso(Date.now() - 864e5) },
+  ],
 };
 db.donations = [
   [2500, 'paid', 'Hassan R.'], [5000, 'paid', null], [10000, 'paid', 'A supporter'], [2500, 'paid', 'Yusuf K.'], [1000, 'pending', null],
@@ -183,7 +193,60 @@ const me = (req) => { const u = userFromAuth(req); return u && db.members.find((
 const SAMPLE = new Set(people.map(([k]) => mid(k)));      // the made-up demo members
 const totalFor = (id) => db.points_ledger.filter((l) => l.member_id === id).reduce((n, l) => n + l.points, 0);
 const rankOf = (pts) => [...db.ranks].sort((a, b) => a.min_points - b.min_points).filter((r) => r.min_points <= pts).pop();
+// Levelling, as log_training(), my_level() and the curve do it in the database.
+const LV = () => db.levelling_settings[0];
+const expForLevel = (n) => (n <= 0 ? 0 : Math.round(LV().curve_base * n ** LV().curve_power));
+const levelForExp = (x) => {
+  x = Math.max(0, x);
+  let n = Math.max(0, Math.floor((x / LV().curve_base) ** (1 / LV().curve_power)));
+  while (expForLevel(n + 1) <= x) n += 1;
+  while (n > 0 && expForLevel(n) > x) n -= 1;
+  return n;
+};
+const pointsFor = (m) => totalFor(m.id) + (SAMPLE.has(m.id) ? 300 : 0);   // what my_summary shows
+const trainingFor = (m) => db.training_logs.filter((t) => t.member_id === m.id).reduce((n, t) => n + t.exp, 0);
+const expFor = (m) => Math.max(0, pointsFor(m) + trainingFor(m));
+
 const RPC = {
+  my_level: (req) => {
+    const m = me(req);
+    const total = expFor(m), level = levelForExp(total);
+    return { total_exp: total, exp_from_points: pointsFor(m), exp_from_training: trainingFor(m),
+      level, level_starts_at: expForLevel(level), next_level_at: expForLevel(level + 1) };
+  },
+  log_training: (req, b) => {
+    const m = me(req); const s = LV(); const today = day(0);
+    if (!m || m.status !== 'active') throw new Error('Only active members can log training.');
+    if (!b.p_date || b.p_date > today) throw new Error('Pick the day you trained: today or an earlier day.');
+    if (b.p_date < day(-s.backdate_days)) throw new Error(`Training can be logged up to ${s.backdate_days} days back.`);
+    let { p_minutes: minutes = null, p_miles: miles = null, p_exercise: exercise = null, p_reps: reps = null, p_notes: notes = null } = b;
+    exercise = exercise?.trim() || null; notes = notes?.trim() || null;
+    if (minutes != null && (minutes < 1 || minutes > 600)) throw new Error('Minutes should be between 1 and 600.');
+    if (miles != null && (miles <= 0 || miles > 100)) throw new Error('Miles should be more than 0 and no more than 100.');
+    if (reps != null && (reps < 1 || reps > 10000)) throw new Error('Reps should be between 1 and 10,000.');
+    let raw;
+    if (b.p_kind === 'running') {
+      if (minutes == null && miles == null) throw new Error('For a run, give the distance, the time, or both.');
+      exercise = null; reps = null; raw = Math.floor((minutes || 0) * s.exp_per_minute + (miles || 0) * s.exp_per_mile);
+    } else if (b.p_kind === 'calisthenics' || b.p_kind === 'strength') {
+      if (!exercise || reps == null) throw new Error('Give the exercise and the total reps.');
+      minutes = null; miles = null; raw = Math.floor(reps / s.reps_per_exp);
+    } else {
+      if (minutes == null) throw new Error('Give how many minutes you trained.');
+      miles = null; exercise = null; reps = null; raw = Math.floor(minutes * s.exp_per_minute);
+    }
+    const sameDay = db.training_logs.filter((t) => t.member_id === m.id && t.trained_on === b.p_date);
+    if (sameDay.length >= s.max_logs_per_day) throw new Error(`One day can hold ${s.max_logs_per_day} entries, and that day is full.`);
+    const cap = s[`cap_${b.p_kind}`];
+    const used = sameDay.filter((t) => t.kind === b.p_kind).reduce((n, t) => n + t.exp, 0);
+    const exp = Math.max(0, Math.min(raw, cap - used));
+    const before = expFor(m);
+    const row = { id: uuid(), member_id: m.id, trained_on: b.p_date, kind: b.p_kind, minutes, miles, exercise, reps, notes,
+      exp, exp_before_cap: raw, created_at: iso(Date.now()) };
+    db.training_logs.push(row);
+    return { id: row.id, exp, exp_before_cap: raw, capped: exp < raw, daily_cap: cap,
+      level_before: levelForExp(before), level_after: levelForExp(before + exp), total_exp: before + exp };
+  },
   my_summary: (req) => {
     const m = me(req);
     const pad = SAMPLE.has(m.id);
